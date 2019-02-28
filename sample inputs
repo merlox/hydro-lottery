@@ -1,0 +1,10 @@
+bytes32 _name,
+string memory _description,
+uint256 _hydroPricePerTicket,
+uint256 _hydroReward,
+uint256 _beginningTimestamp,
+uint256 _endTimestamp,
+uint256 _fee,
+address payable _feeReceiver
+
+"0x4578616d706c65206c6f74746f00000000000000000000000000000000000000", "This is an example lottery to see if the function works", 100, 1000, 1551054293, 1951054293, 10, 0xef5781a2c04113e29be5724ae6e30bc287610007
