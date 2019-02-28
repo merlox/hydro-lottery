@@ -68,12 +68,10 @@ contract HydroLottery is usingOraclize {
     /// @return uint256 Returns the new lottery identifier just created
     function createLottery(bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver) public returns(uint256) {
         uint256 newLotteryId = lotteries.length;
-        uint256 owner = identityRegistry.getEIN(msg.sender);
-        uint256 ownerTokenBalance = hydroToken.balanceOf(msg.sender);
 
-        require(owner != 0, 'The owner must have an EIN number');
+        require(identityRegistry.getEIN(msg.sender) != 0, 'The owner must have an EIN number');
         require(_fee >= 0 && _fee <= 100, 'The fee must be between 0 and 100 (in percentage without the % symbol)');
-        require(ownerTokenBalance >= _hydroReward, 'You must have enough token funds for the reward');
+        require(hydroToken.balanceOf(msg.sender) >= _hydroReward, 'You must have enough token funds for the reward');
         require(_hydroReward > 0, 'The reward must be larger than zero');
         require(_beginningTimestamp >= now, 'The lottery must start now or in the future');
         require( _endTimestamp > _beginningTimestamp, 'The lottery must end after the start not earlier');
@@ -85,7 +83,8 @@ contract HydroLottery is usingOraclize {
         escrowContractsArray.push(address(newEscrowContract));
 
         // Transfer HYDRO tokens to the escrow contract from the msg.sender's address with delegatecall until the lottery is finished
-        require(address(hydroToken).delegatecall(abi.encodeWithSignature('transfer(address,uint256)', address(newEscrowContract), _hydroReward)));
+        (bool transferResult, bytes memory transferResultData) = address(hydroToken).delegatecall(abi.encodeWithSignature('transfer(address,uint256)', address(newEscrowContract), _hydroReward));
+        require(transferResult, 'The token transfer to the escrow contract must be processed successfully');
 
         Lottery memory newLottery = Lottery({
             id: newLotteryId,
@@ -95,7 +94,7 @@ contract HydroLottery is usingOraclize {
             hydroReward: _hydroReward,
             beginningDate: _beginningTimestamp,
             endDate: _endTimestamp,
-            einOwner: owner,
+            einOwner: identityRegistry.getEIN(msg.sender),
             fee: _fee,
             feeReceiver: _feeReceiver,
             escrowContract: address(newEscrowContract),
@@ -121,8 +120,8 @@ contract HydroLottery is usingOraclize {
 
         // TODO check that the user sends the required amount of HYDRO to participate by reading the Lottery fee and checking the HYDRO sent
         uint256 ticketId = lotteryById[_lotteryNumber].einsParticipating.length;
-        lotteryById[_lotteryNumber].einsParticipating.push(_einSnowflake);
-        lotteryById[_lotteryNumber].assignedLotteries[_einSnowflake] = ticketId;
+        /* lotteryById[_lotteryNumber].einsParticipating.push(_einSnowflake);
+        lotteryById[_lotteryNumber].assignedLotteries[_einSnowflake] = ticketId; */
         return ticketId;
     }
 
@@ -167,7 +166,7 @@ contract HydroLottery is usingOraclize {
    }
 
    /// Returns all the lottery ids
-   function getLotteryIds() public view returns(uint256[]) {
+   function getLotteryIds() public view returns(uint256[] memory) {
        return lotteryIds;
    }
 }
