@@ -32,6 +32,7 @@ contract('HydroLottery', accounts => {
 
         // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
         await hydroLottery.createLottery(fillBytes32WithSpaces('Example'), 'This is an example', 100, 1000, startTime, endTime, 10, accounts[0])
+        const lottery = await hydroLottery.lotteryById(1)
     })
 })
 
