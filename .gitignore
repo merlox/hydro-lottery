@@ -2,3 +2,4 @@ node_modules/
 .secret
 .DS_Store
 build/
+truffle-config-secret.js
