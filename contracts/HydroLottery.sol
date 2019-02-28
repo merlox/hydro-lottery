@@ -120,7 +120,6 @@ contract HydroLottery is usingOraclize {
         require(ein != 0, 'You must have an EIN snowflake number identifier');
 
         // TODO check that the user sends the required amount of HYDRO to participate by reading the Lottery fee and checking the HYDRO sent
-
         uint256 ticketId = lotteryById[_lotteryNumber].einsParticipating.length;
         lotteryById[_lotteryNumber].einsParticipating.push(_einSnowflake);
         lotteryById[_lotteryNumber].assignedLotteries[_einSnowflake] = ticketId;
