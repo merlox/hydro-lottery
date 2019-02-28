@@ -41,6 +41,7 @@ contract HydroLottery is usingOraclize {
     // Lottery id => Lottery struct
     mapping(uint256 => Lottery) public lotteryById;
     Lottery[] public lotteries;
+    uint256[] public lotteryIds;
 
     // Escrow contract's address => lottery number
     mapping(address => uint256) public escrowContracts;
@@ -76,17 +77,15 @@ contract HydroLottery is usingOraclize {
         require(_hydroReward > 0, 'The reward must be larger than zero');
         require(_beginningTimestamp >= now, 'The lottery must start now or in the future');
         require( _endTimestamp > _beginningTimestamp, 'The lottery must end after the start not earlier');
-
-        // If you don't specify who gets the fee per ticket purchased, the owner gets it
-        if(_feeReceiver == address(0)) _feeReceiver = msg.sender;
+        require(_feeReceiver != address(0), 'You need to specify the fee receiver even if its yourself');
 
         // Creating the escrow contract that will hold HYDRO tokens for this lottery exclusively as a safety feature
         HydroEscrow newEscrowContract = new HydroEscrow(_endTimestamp, address(hydroToken), _hydroReward, _fee, _feeReceiver);
         escrowContracts[address(newEscrowContract)] = newLotteryId;
         escrowContractsArray.push(address(newEscrowContract));
 
-        // Transfer HYDRO tokens to the escrow contract from the msg.sender's address with delegatecall
-        address(hydroToken).delegatecall(abi.encodeWithSignature('transfer(address,uint256)', address(newEscrowContract), _hydroReward));
+        // Transfer HYDRO tokens to the escrow contract from the msg.sender's address with delegatecall until the lottery is finished
+        require(address(hydroToken).delegatecall(abi.encodeWithSignature('transfer(address,uint256)', address(newEscrowContract), _hydroReward)));
 
         Lottery memory newLottery = Lottery({
             id: newLotteryId,
@@ -106,15 +105,19 @@ contract HydroLottery is usingOraclize {
 
         lotteries.push(newLottery);
         lotteryById[newLotteryId] = newLottery;
+        lotteryIds.push(newLotteryId);
 
         return newLotteryId;
     }
 
-    /// @notice Creates a unique participation ID for a lottery and stores it inside the proper Lottery struct
-    /// @param _lotteryNumber The unique lottery identifier used mostly with the mapping lotteryById
-    /// @param _einSnowflake The EIN identifier for a snowflake id
-    function buyTicket(uint256 _lotteryNumber, uint256 _einSnowflake) public payable returns(uint256) {
+    /// @notice Creates a unique participation ticket ID for a lottery and stores it inside the proper Lottery struct. Automatically buys you the lottery using your HYDRO tokens associated with your address for the lottery price.
+    /// @param _lotteryNumber The unique lottery identifier used with the mapping lotteryById
+    /// @return uint256 Returns the ticket id that you just bought
+    function buyTicket(uint256 _lotteryNumber) public returns(uint256) {
+        uint256 ein = identityRegistry.getEIN(msg.sender);
+
         require(_lotteryNumber != 0, "The Lottery Number cant be zero");
+        require(ein != 0, 'You must have an EIN snowflake number identifier');
 
         // TODO check that the user sends the required amount of HYDRO to participate by reading the Lottery fee and checking the HYDRO sent
 
@@ -162,5 +165,10 @@ contract HydroLottery is usingOraclize {
 
    function distributePrizes() internal {
 
+   }
+
+   /// Returns all the lottery ids
+   function getLotteryIds() public view returns(uint256[]) {
+       return lotteryIds;
    }
 }
