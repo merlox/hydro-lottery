@@ -15,7 +15,7 @@ import './OraclizeAPI.sol';
 /// @notice The Hydro Lottery smart contract to create decentralized lotteries for accounts that have an EIN Snowflake ID assciated with them. All payments are done in HYDRO instead of Ether.
 /// @author Merunas Grincalaitis <merunasgrincalaitis@gmail.com>
 contract HydroLottery is usingOraclize {
-    event SupPeople(uint256, bool);
+    event SupPeople(bool indexed boolResult, bytes indexed bytesResult);
     struct Lottery {
     	uint256 id;
     	bytes32 name;
@@ -84,8 +84,11 @@ contract HydroLottery is usingOraclize {
         escrowContractsArray.push(address(newEscrowContract));
 
         // Transfer HYDRO tokens to the escrow contract from the msg.sender's address with delegatecall until the lottery is finished
-        (bool transferResult, bytes memory transferResultData) = address(hydroToken).delegatecall(abi.encodeWithSignature('transfer(address,uint256)', address(newEscrowContract), _hydroReward));
-        emit SupPeople(2,false);
+        /* (bool transferResult, bytes memory transferResultData) = address(hydroToken).delegatecall(abi.encodeWithSignature('transfer(address,uint256)', address(newEscrowContract), _hydroReward)); */
+
+        (bool transferResult, bytes memory transferResultData) = address(hydroToken).delegatecall(abi.encodeWithSignature('balanceOf(address)', msg.sender));
+
+        emit SupPeople(transferResult, transferResultData);
         /* require(transferResult, 'The token transfer to the escrow contract must be processed successfully'); */
 
         Lottery memory newLottery = Lottery({

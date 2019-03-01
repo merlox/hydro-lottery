@@ -28,7 +28,7 @@ contract('HydroLottery', accounts => {
             arguments: [identityRegistry.address, hydroToken.address]
         }).send({
             from: accounts[0],
-            gas: 5043810 // Note that it's important to use the exact gas for deployment, use .deploy().estimateGas() if it fails
+            gas: 8e6 // Note that it's important to use the exact gas for deployment, use .deploy().estimateGas() if it fails
         })
 
         // EIN 1
