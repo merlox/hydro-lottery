@@ -1,6 +1,7 @@
 const assert = require('assert')
 const fs = require('fs')
 const { join } = require('path')
+const Web3 = require('web3')
 const IdentityRegistry = artifacts.require('IdentityRegistry')
 const HydroTokenTestnet = artifacts.require('HydroTokenTestnet')
 const hydroLotteryABI = JSON.parse(fs.readFileSync(join(__dirname, '../build/contracts', 'HydroLottery.json')))
@@ -17,6 +18,7 @@ let hydroLottery = {}
 contract('HydroLottery', accounts => {
     // Deploy a new HydroLottery, Token and Registry before each test to avoid messing shit up while creatin an EIN and getting tokens
     beforeEach(async () => {
+        web3 = new Web3(new Web3.providers.WebsocketProvider('http://localhost:8545'))
         hydroToken = await HydroTokenTestnet.new()
         identityRegistry = await IdentityRegistry.new()
         hydroLottery = new web3.eth.Contract(hydroLotteryABI.abi)
@@ -64,7 +66,7 @@ contract('HydroLottery', accounts => {
         const lottery = await hydroLottery.methods.lotteryById(0).call()
 
         console.log('Your tokens', parseInt(await hydroToken.balanceOf(accounts[0])))
-        console.log('Escrow tokens', parseInt(await hydroTokenbalanceOf(lottery.escrowContract)))
+        console.log('Escrow tokens', parseInt(await hydroToken.balanceOf(lottery.escrowContract)))
 
         // lottery.id, lottery.name, lottery.description, lottery.hydroPrice, lottery.hydroReward, lottery.beginningDate, lottery.endDate, lottery.einOwner, lottery.fee, lottery.feeReceiver, lottery.escrowContract, lottery.einWinner
         assert.equal(id, lottery.id, 'The lottery ID has not been setup properly')
