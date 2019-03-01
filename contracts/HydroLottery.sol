@@ -53,7 +53,7 @@ contract HydroLottery is usingOraclize {
         require(_tokenAddress != address(0), 'You must setup the token rinkeby address');
         hydroToken = HydroTokenTestnetInterface(_tokenAddress);
         identityRegistry = IdentityRegistryInterface(_identityRegistryAddress);
-        // TODO Uncomment this
+        // TODO Uncomment this when the contract is completed
         /* oraclize_setProof(proofType_Ledger); */
     }
 

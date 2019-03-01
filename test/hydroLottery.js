@@ -1,7 +1,9 @@
 const assert = require('assert')
-const HydroLottery = artifacts.require('HydroLottery')
+const fs = require('fs')
+const { join } = require('path')
 const IdentityRegistry = artifacts.require('IdentityRegistry')
 const HydroTokenTestnet = artifacts.require('HydroTokenTestnet')
+const hydroLotteryABI = JSON.parse(fs.readFileSync(join(__dirname, '../build/contracts', 'HydroLottery.json')))
 let hydroToken = {}
 let identityRegistry = {}
 let hydroLottery = {}
@@ -17,13 +19,29 @@ contract('HydroLottery', accounts => {
     beforeEach(async () => {
         hydroToken = await HydroTokenTestnet.new()
         identityRegistry = await IdentityRegistry.new()
-        hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address)
+        hydroLottery = new web3.eth.Contract(hydroLotteryABI.abi)
+
+        hydroLottery = await hydroLottery.deploy({
+            data: hydroLotteryABI.bytecode,
+            arguments: [identityRegistry.address, hydroToken.address]
+        }).send({
+            from: accounts[0],
+            gas: 5043810 // Note that it's important to use the exact gas for deployment, use .deploy().estimateGas() if it fails
+        })
+
         // EIN 1
         await identityRegistry.createIdentity(accounts[0], accounts, accounts)
         // EIN 2
         await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1] })
         // EIN 3
         await identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[2] })
+
+        // Log events
+        console.log('Listening to events...')
+        const subscription = await hydroLottery.events.allEvents()
+        subscription.on('data', newEvent => {
+            console.log('New event', newEvent)
+        })
     })
 
     it('Should create a new lottery', async () => {
@@ -37,7 +55,7 @@ contract('HydroLottery', accounts => {
         const fee = 10
         const feeReceiver = accounts[0]
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
-        
+
         // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
         await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver)
         const lottery = await hydroLottery.lotteryById(0)
