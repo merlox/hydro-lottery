@@ -37,13 +37,6 @@ contract('HydroLottery', accounts => {
         await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1] })
         // EIN 3
         await identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[2] })
-
-        // Log events
-        console.log('Listening to events...')
-        const subscription = await hydroLottery.events.allEvents()
-        subscription.on('data', newEvent => {
-            console.log('New event', newEvent)
-        })
     })
 
     it('Should create a new lottery', async () => {
@@ -57,6 +50,18 @@ contract('HydroLottery', accounts => {
         const fee = 10
         const feeReceiver = accounts[0]
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
+
+        // First reduce the allowance to 0 to avoid race conditions
+        await hydroToken.approve(hydroLottery.address, 0, {
+            from: accounts[0],
+            gas: 8e6
+        })
+
+        // Then do the right approval
+        await hydroToken.approve(hydroLottery.address, hydroReward, {
+            from: accounts[0],
+            gas: 8e6
+        })
 
         // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
         await hydroLottery.methods.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver).send({

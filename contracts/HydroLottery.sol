@@ -15,7 +15,6 @@ import './OraclizeAPI.sol';
 /// @notice The Hydro Lottery smart contract to create decentralized lotteries for accounts that have an EIN Snowflake ID assciated with them. All payments are done in HYDRO instead of Ether.
 /// @author Merunas Grincalaitis <merunasgrincalaitis@gmail.com>
 contract HydroLottery is usingOraclize {
-    event SupPeople(bool indexed boolResult, bytes indexed bytesResult);
     struct Lottery {
     	uint256 id;
     	bytes32 name;
@@ -57,7 +56,7 @@ contract HydroLottery is usingOraclize {
         /* oraclize_setProof(proofType_Ledger); */
     }
 
-    /// @notice Defines the lottery specification requires a HYDRO payment that will be used as escrow for this lottery. The escrow is a separate contract to hold people’s HYDRO funds not ether
+    /// @notice Defines the lottery specification requires a HYDRO payment that will be used as escrow for this lottery. The escrow is a separate contract to hold people’s HYDRO funds not ether. Remember to approve() the right amount of HYDRO for this contract to set the hydro reward for the lottery.
     /// @param _name The lottery name
     /// @param _description What the lottery is about
     /// @param _hydroPricePerTicket How much each user has to pay to participate in the lottery, the price per ticket in HYDRO
@@ -83,13 +82,10 @@ contract HydroLottery is usingOraclize {
         escrowContracts[address(newEscrowContract)] = newLotteryId;
         escrowContractsArray.push(address(newEscrowContract));
 
-        // Transfer HYDRO tokens to the escrow contract from the msg.sender's address with delegatecall until the lottery is finished
-        /* (bool transferResult, bytes memory transferResultData) = address(hydroToken).delegatecall(abi.encodeWithSignature('transfer(address,uint256)', address(newEscrowContract), _hydroReward)); */
-
-        (bool transferResult, bytes memory transferResultData) = address(hydroToken).delegatecall(abi.encodeWithSignature('balanceOf(address)', msg.sender));
-
-        emit SupPeople(transferResult, transferResultData);
-        /* require(transferResult, 'The token transfer to the escrow contract must be processed successfully'); */
+        // Transfer HYDRO tokens to the escrow contract from the msg.sender's address with transferFrom() until the lottery is finished
+        // Use transferFrom() after the approval has been manually done. Checking the allowance first.
+        require(hydroToken.allowance(msg.sender, address(this)) >= _hydroReward, 'Your allowance is not enough. You must approve() the right amount of HYDRO tokens for the reward.');
+        hydroToken.transferFrom(msg.sender, address(newEscrowContract, _hydroReward));
 
         Lottery memory newLottery = Lottery({
             id: newLotteryId,
