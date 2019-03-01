@@ -85,7 +85,7 @@ contract HydroLottery is usingOraclize {
         // Transfer HYDRO tokens to the escrow contract from the msg.sender's address with transferFrom() until the lottery is finished
         // Use transferFrom() after the approval has been manually done. Checking the allowance first.
         require(hydroToken.allowance(msg.sender, address(this)) >= _hydroReward, 'Your allowance is not enough. You must approve() the right amount of HYDRO tokens for the reward.');
-        hydroToken.transferFrom(msg.sender, address(newEscrowContract, _hydroReward));
+        hydroToken.transferFrom(msg.sender, address(newEscrowContract), _hydroReward);
 
         Lottery memory newLottery = Lottery({
             id: newLotteryId,
