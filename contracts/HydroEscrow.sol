@@ -34,19 +34,20 @@ contract HydroEscrow {
         feeReceiver = _feeReceiver;
     }
 
-    // To send the reward to the winner
+    // To send the reward to the winner and distribute the corresponding fee to the fee receiver
     function releaseWinnerReward(address _winner) public onlyHydroLottery {
         require(now >= endTimestamp, 'You can only release funds after the lottery has ended');
         uint256 hydroInsideThisContract = hydroToken.balanceOf(address(this));
         uint256 hydroForFeeReceiver;
         uint256 hydroForWinner;
 
+        // If there is no fee, the winner gets all including the ticket prices accomulated + the standard reward, if there's a fee, the winner gets his reward + the ticket prices accomulated - the fee percentage
         if(fee == 0) {
             hydroForFeeReceiver = 0;
             hydroForWinner = hydroInsideThisContract;
         } else {
             hydroForFeeReceiver = hydroInsideThisContract * (fee / 100);
-            hydroForWinner = hydroInsideThisContract * ((100 - fee) / 100);
+            hydroForWinner = hydroInsideThisContract - hydroForFeeReceiver;
         }
 
         hydroToken.transfer(_winner, hydroForWinner);
