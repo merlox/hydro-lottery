@@ -4,6 +4,7 @@ const { join } = require('path')
 const Web3 = require('web3')
 const IdentityRegistry = artifacts.require('IdentityRegistry')
 const HydroTokenTestnet = artifacts.require('HydroTokenTestnet')
+const HydroLottery = artifacts.require('HydroLottery')
 const hydroLotteryABI = JSON.parse(fs.readFileSync(join(__dirname, '../build/contracts', 'HydroLottery.json')))
 let hydroToken = {}
 let identityRegistry = {}
@@ -21,15 +22,7 @@ contract('HydroLottery', accounts => {
         web3 = new Web3(new Web3.providers.WebsocketProvider('http://localhost:8545'))
         hydroToken = await HydroTokenTestnet.new()
         identityRegistry = await IdentityRegistry.new()
-        hydroLottery = new web3.eth.Contract(hydroLotteryABI.abi)
-
-        hydroLottery = await hydroLottery.deploy({
-            data: hydroLotteryABI.bytecode,
-            arguments: [identityRegistry.address, hydroToken.address]
-        }).send({
-            from: accounts[0],
-            gas: 8e6 // Note that it's important to use the exact gas for deployment, use .deploy().estimateGas() if it fails
-        })
+        hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address)
 
         // EIN 1
         await identityRegistry.createIdentity(accounts[0], accounts, accounts)
@@ -64,7 +57,7 @@ contract('HydroLottery', accounts => {
         })
 
         // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
-        await hydroLottery.methods.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver).send({
+        await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
             from: accounts[0],
             gas: 8e6
         })
