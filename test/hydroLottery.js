@@ -61,21 +61,18 @@ contract('HydroLottery', accounts => {
             from: accounts[0],
             gas: 8e6
         })
-        // const lottery = await hydroLottery.methods.lotteryById(0).call()
-        //
-        // console.log('Your tokens', parseInt(await hydroToken.balanceOf(accounts[0])))
-        // console.log('Escrow tokens', parseInt(await hydroToken.balanceOf(lottery.escrowContract)))
-        //
-        // // lottery.id, lottery.name, lottery.description, lottery.hydroPrice, lottery.hydroReward, lottery.beginningDate, lottery.endDate, lottery.einOwner, lottery.fee, lottery.feeReceiver, lottery.escrowContract, lottery.einWinner
-        // assert.equal(id, lottery.id, 'The lottery ID has not been setup properly')
-        // assert.equal(name, lottery.name, 'The lottery name has not been setup properly')
-        // assert.equal(description, lottery.description, 'The lottery description has not been setup properly')
-        // assert.equal(hydroPrice, lottery.hydroPrice, 'The lottery price has not been setup properly')
-        // assert.equal(hydroReward, lottery.hydroReward, 'The lottery reward has not been setup properly')
-        // assert.equal(startTime, lottery.beginningDate, 'The lottery start time has not been setup properly')
-        // assert.equal(endTime, lottery.endDate, 'The lottery end time has not been setup properly')
-        // assert.equal(ein, lottery.einOwner, 'The lottery EIN owner has not been setup properly')
-        // assert.equal(fee, lottery.fee, 'The lottery fee has not been setup properly')
+        const lottery = await hydroLottery.lotteryById(0)
+
+        // lottery.id, lottery.name, lottery.description, lottery.hydroPrice, lottery.hydroReward, lottery.beginningDate, lottery.endDate, lottery.einOwner, lottery.fee, lottery.feeReceiver, lottery.escrowContract, lottery.einWinner
+        assert.equal(id, lottery.id, 'The lottery ID has not been setup properly')
+        assert.equal(name, lottery.name, 'The lottery name has not been setup properly')
+        assert.equal(description, lottery.description, 'The lottery description has not been setup properly')
+        assert.equal(hydroPrice, lottery.hydroPrice, 'The lottery price has not been setup properly')
+        assert.equal(hydroReward, lottery.hydroReward, 'The lottery reward has not been setup properly')
+        assert.equal(startTime, lottery.beginningDate, 'The lottery start time has not been setup properly')
+        assert.equal(endTime, lottery.endDate, 'The lottery end time has not been setup properly')
+        assert.equal(ein, lottery.einOwner, 'The lottery EIN owner has not been setup properly')
+        assert.equal(fee, lottery.fee, 'The lottery fee has not been setup properly')
     })
     //
     // it('Should move the hydro token reward to the escrow contract when creating a new lottery', async () => {
