@@ -176,12 +176,12 @@ contract('HydroLottery', accounts => {
             from: accounts[1],
             gas: 8e6
         })
-        
+
         const secondEin = parseInt(await identityRegistry.getEIN(accounts[1]))
-        const newLotteryTicket = await hydroLottery.getTicketIdByEin(secondEin)
-        // const totalTickets = (await hydroLottery.lotteryById(id)).einsParticipating.length
-        // assert.equal(newLotteryTicket === 1, 'The lottery Id of the second ticket must be one to confirm that is has been purchased')
-        // assert.equal(totalTickets == 2, 'There must be two tickets purchased')
+        const secondEinTicket = parseInt(await hydroLottery.getTicketIdByEin(id, secondEin))
+        const totalTickets = (await hydroLottery.getEinsParticipatingInLottery(id)).length
+        assert.equal(secondEinTicket, 1, 'The lottery Id of the second ticket must be one to confirm that is has been purchased')
+        assert.equal(totalTickets, 2, 'There must be two tickets purchased')
     })
 })
 

@@ -185,7 +185,14 @@ contract HydroLottery is usingOraclize {
    /// @param lotteryId The id of the lottery
    /// @param ein The ein of the user that purchased the ticket
    /// @return ticketId The Id of the ticket purchased, zero is also a valid identifier if there are more than 1 tickets purchased
-   function getTicketIdByEin(uint256 lotteryId, uint256 ein) public returns(uint256 ticketId) {
+   function getTicketIdByEin(uint256 lotteryId, uint256 ein) public view returns(uint256 ticketId) {
        ticketId = lotteryById[lotteryId].assignedLotteries[ein];
+   }
+
+   /// @notice To get the array of eins participating in a lottery
+   /// @param lotteryId The id of the lottery that you want to examine
+   /// @return uint256[] The array of EINs participating in the lottery that have purchased a ticket
+   function getEinsParticipatingInLottery(uint256 lotteryId) public view returns(uint256[] memory) {
+       return lotteryById[lotteryId].einsParticipating;
    }
 }
