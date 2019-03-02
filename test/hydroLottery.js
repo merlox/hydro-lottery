@@ -100,11 +100,10 @@ contract('HydroLottery', accounts => {
         })
 
         // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
-        const returnedLotteryId = await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
+        await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
             from: accounts[0],
             gas: 8e6
         })
-        console.log('Lottery id', returnedLotteryId)
         const lottery = await hydroLottery.lotteryById(0)
         const escrowTokenBalance = parseInt(await hydroToken.balanceOf(lottery.escrowContract))
 
@@ -113,35 +112,76 @@ contract('HydroLottery', accounts => {
     })
 
     it('Should buy a ticket for a lottery successfully with enough funds', async () => {
-        // const id = 0
-        // const name = fillBytes32WithSpaces('Example')
-        // const description = 'This is an example'
-        // const hydroPrice = 100
-        // const hydroReward = 1000
-        // const startTime = Math.floor(new Date().getTime() / 1000) + 1e3
-        // const endTime = Math.floor(new Date().getTime() / 1000) + 1e6
-        // const fee = 10
-        // const feeReceiver = accounts[0]
-        // const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
-        //
-        // // First reduce the allowance to 0 to avoid race conditions
-        // await hydroToken.approve(hydroLottery.address, 0, {
-        //     from: accounts[0],
-        //     gas: 8e6
-        // })
-        //
-        // // Then do the right approval
-        // await hydroToken.approve(hydroLottery.address, hydroReward, {
-        //     from: accounts[0],
-        //     gas: 8e6
-        // })
-        //
-        // // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
-        // await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
-        //     from: accounts[0],
-        //     gas: 8e6
-        // })
-        // const lottery = await hydroLottery.lotteryById(0)
+        const id = 0
+        const hydroPrice = 100
+        const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
+        const name = fillBytes32WithSpaces('Example')
+        const description = 'This is an example'
+        const hydroReward = 1000
+        const startTime = Math.floor(new Date().getTime() / 1000) + 1e3
+        const endTime = Math.floor(new Date().getTime() / 1000) + 1e6
+        const fee = 10
+        const feeReceiver = accounts[0]
+        // First reduce the allowance to 0 to avoid race conditions
+        await hydroToken.approve(hydroLottery.address, 0, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        // Then do the right approval
+        await hydroToken.approve(hydroLottery.address, hydroReward, {
+            from: accounts[0],
+            gas: 8e6
+        })
+
+        // bool _id, bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
+        await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
+            from: accounts[0],
+            gas: 8e6
+        })
+
+        // Buy 2 lottery tickets to properly check the id since the first once is zero
+        const lottery = await hydroLottery.lotteryById(id)
+
+        // First reduce the allowance to 0 to avoid race conditions
+        await hydroToken.approve(hydroLottery.address, 0, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        // Then do the right approval
+        await hydroToken.approve(hydroLottery.address, hydroPrice, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        await hydroLottery.buyTicket(lottery.id, {
+            from: accounts[0],
+            gas: 8e6
+        })
+
+        // Transfer tokens to the second account so he can buy some
+        await hydroToken.transfer(accounts[1], 100, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        // First reduce the allowance to 0 to avoid race conditions
+        await hydroToken.approve(hydroLottery.address, 0, {
+            from: accounts[1],
+            gas: 8e6
+        })
+        // Then do the right approval
+        await hydroToken.approve(hydroLottery.address, hydroPrice, {
+            from: accounts[1],
+            gas: 8e6
+        })
+        await hydroLottery.buyTicket(lottery.id, {
+            from: accounts[1],
+            gas: 8e6
+        })
+        
+        const secondEin = parseInt(await identityRegistry.getEIN(accounts[1]))
+        const newLotteryTicket = await hydroLottery.getTicketIdByEin(secondEin)
+        // const totalTickets = (await hydroLottery.lotteryById(id)).einsParticipating.length
+        // assert.equal(newLotteryTicket === 1, 'The lottery Id of the second ticket must be one to confirm that is has been purchased')
+        // assert.equal(totalTickets == 2, 'There must be two tickets purchased')
     })
 })
 

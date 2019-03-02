@@ -175,8 +175,17 @@ contract HydroLottery is usingOraclize {
 
    }
 
-   /// Returns all the lottery ids
+   /// @notice Returns all the lottery ids
+   /// @return uint256[] The array of all lottery ids
    function getLotteryIds() public view returns(uint256[] memory) {
        return lotteryIds;
+   }
+
+   /// @notice To get the ticketId given the lottery and ein
+   /// @param lotteryId The id of the lottery
+   /// @param ein The ein of the user that purchased the ticket
+   /// @return ticketId The Id of the ticket purchased, zero is also a valid identifier if there are more than 1 tickets purchased
+   function getTicketIdByEin(uint256 lotteryId, uint256 ein) public returns(uint256 ticketId) {
+       ticketId = lotteryById[lotteryId].assignedLotteries[ein];
    }
 }
