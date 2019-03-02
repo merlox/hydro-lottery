@@ -31,7 +31,7 @@ contract HydroLottery is usingOraclize {
     	address escrowContract;
         // The unique EINs of those that participate in this lottery. You can get the length of this array to calculate how many users are participating in this lottery
         uint256[] einsParticipating;
-    	// Assigns a snowflakeId => tickedID which is a unique identifier for that participation
+    	// Assigns a snowflakeId => tickedID which is a unique identifier for that participation. Only one ticket per EIN for now.
     	mapping(uint256 => uint256) assignedLotteries;
     	uint256 einWinner;
     }
@@ -113,25 +113,25 @@ contract HydroLottery is usingOraclize {
         return newLotteryId;
     }
 
-    /// @notice Creates a unique participation ticket ID for a lottery and stores it inside the proper Lottery struct. You need to approve the right amount of tokens to this contract before buying the lottery ticket using your HYDRO tokens associated with your address.
+    /// @notice Creates a unique participation ticket ID for a lottery and stores it inside the proper Lottery struct. You need to approve the right amount of tokens to this contract before buying the lottery ticket using your HYDRO tokens associated with your address. Note, you can only buy 1 ticket per lottery for now.
     /// @param _lotteryNumber The unique lottery identifier used with the mapping lotteryById
     /// @return uint256 Returns the ticket id that you just bought
     function buyTicket(uint256 _lotteryNumber) public returns(uint256) {
         uint256 ein = identityRegistry.getEIN(msg.sender);
         uint256 allowance = hydroToken.allowance(msg.sender, address(this));
         uint256 ticketPrice = lotteryById[_lotteryNumber].hydroPrice;
+        address escrowContract = lotteryById[_lotteryNumber].escrowContract;
 
         require(ein != 0, 'You must have an EIN snowflake identifier associated with your address when buying tickets');
         require(lotteryById[_lotteryNumber].exists, 'The lottery must exist for you to participate in it by buying a ticket');
         require(allowance >= ticketPrice, 'Your allowance is not enough. You must approve() the right amount of HYDRO tokens for the price of this lottery ticket.');
-        require(hydroToken.transferFrom(msg.sender, address(newEscrowContract), _hydroReward), 'The ticket purchase for this lottery must be successful when transfering tokens');
+        require(hydroToken.transferFrom(msg.sender, escrowContract, ticketPrice), 'The ticket purchase for this lottery must be successful when transfering tokens');
 
-        // TODO check that the user sends the required amount of HYDRO to participate by reading the Lottery fee and checking the HYDRO sent
+        // Update the lottery parameters
         uint256 ticketId = lotteryById[_lotteryNumber].einsParticipating.length;
-        lotteryById[_lotteryNumber].assignedLotteries;
+        lotteryById[_lotteryNumber].einsParticipating.push(ticketId);
+        lotteryById[_lotteryNumber].assignedLotteries[ein] = ticketId;
 
-        /* lotteryById[_lotteryNumber].einsParticipating.push(_einSnowflake);
-        lotteryById[_lotteryNumber].assignedLotteries[_einSnowflake] = ticketId; */
         return ticketId;
     }
 

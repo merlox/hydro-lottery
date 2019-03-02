@@ -100,15 +100,48 @@ contract('HydroLottery', accounts => {
         })
 
         // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
-        await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
+        const returnedLotteryId = await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
             from: accounts[0],
             gas: 8e6
         })
+        console.log('Lottery id', returnedLotteryId)
         const lottery = await hydroLottery.lotteryById(0)
         const escrowTokenBalance = parseInt(await hydroToken.balanceOf(lottery.escrowContract))
 
         // lottery.id, lottery.name, lottery.description, lottery.hydroPrice, lottery.hydroReward, lottery.beginningDate, lottery.endDate, lottery.einOwner, lottery.fee, lottery.feeReceiver, lottery.escrowContract, lottery.einWinner
         assert.equal(escrowTokenBalance, hydroReward, 'The token balance inside the escrow contract must be the hydro reward when deploying a new lottery')
+    })
+
+    it('Should buy a ticket for a lottery successfully with enough funds', async () => {
+        // const id = 0
+        // const name = fillBytes32WithSpaces('Example')
+        // const description = 'This is an example'
+        // const hydroPrice = 100
+        // const hydroReward = 1000
+        // const startTime = Math.floor(new Date().getTime() / 1000) + 1e3
+        // const endTime = Math.floor(new Date().getTime() / 1000) + 1e6
+        // const fee = 10
+        // const feeReceiver = accounts[0]
+        // const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
+        //
+        // // First reduce the allowance to 0 to avoid race conditions
+        // await hydroToken.approve(hydroLottery.address, 0, {
+        //     from: accounts[0],
+        //     gas: 8e6
+        // })
+        //
+        // // Then do the right approval
+        // await hydroToken.approve(hydroLottery.address, hydroReward, {
+        //     from: accounts[0],
+        //     gas: 8e6
+        // })
+        //
+        // // bytes32 _name, string memory _description, uint256 _hydroPricePerTicket, uint256 _hydroReward, uint256 _beginningTimestamp, uint256 _endTimestamp, uint256 _fee, address payable _feeReceiver
+        // await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
+        //     from: accounts[0],
+        //     gas: 8e6
+        // })
+        // const lottery = await hydroLottery.lotteryById(0)
     })
 })
 
