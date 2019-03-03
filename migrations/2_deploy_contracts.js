@@ -20,7 +20,9 @@ module.exports = (deployer, network) => {
             return deployer.deploy(
                 HydroLottery,
                 identityRegistryInstance,
-                tokenInstance
+                tokenInstance, {
+                    gas: 8e6
+                }
             )
         }).then(hydroLottery => {
             console.log('Deployed hydroLottery', hydroLottery.address)

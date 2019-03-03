@@ -22,7 +22,13 @@ contract('HydroLottery', accounts => {
         web3 = new Web3(new Web3.providers.WebsocketProvider('http://localhost:8545'))
         hydroToken = await HydroTokenTestnet.new()
         identityRegistry = await IdentityRegistry.new()
-        hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address)
+        hydroLottery = await HydroLottery.new.estimateGas(identityRegistry.address, hydroToken.address, {
+            from: accounts[0],
+            gas: 8e6
+        })
+
+        console.log('Gas', hydroLottery)
+        process.exit(0)
 
         // EIN 1
         await identityRegistry.createIdentity(accounts[0], accounts, accounts)

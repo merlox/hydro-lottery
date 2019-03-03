@@ -3,20 +3,18 @@ pragma solidity ^0.5.0;
 import './HydroEscrow.sol';
 import './HydroTokenTestnetInterface.sol';
 import './IdentityRegistryInterface.sol';
-import './OraclizeAPI.sol';
+import './RandomizerInterface.sol';
 
 // Rinkeby testnet addresses
 // HydroToken: 0x2df33c334146d3f2d9e09383605af8e3e379e180
 // IdentityRegistry: 0xa7ba71305bE9b2DFEad947dc0E5730BA2ABd28EA
 // Most recent HydroLottery deployed address: 0x001328288dd358644e289f48ec4ef0bc3139a2d2
 
-// TODO Uncomment oraclize constructor
-
 /// @notice The Hydro Lottery smart contract to create decentralized lotteries for accounts that have an EIN Snowflake ID assciated with them. All payments are done in HYDRO instead of Ether.
 /// @author Merunas Grincalaitis <merunasgrincalaitis@gmail.com>
 contract HydroLottery is usingOraclize {
-    event LotteryStarted(uint256 indexed id, uint256 indexed beginningDate, uint256 indexed endDate);
-    event LotteryEnded(uint256 indexed id, uint256 indexed endTimestamp, uint256 indexed einWinner);
+    event LotteryStarted(uint256 indexed id, uint256 beginningDate, uint256 endDate);
+    event LotteryEnded(uint256 indexed id, uint256 endTimestamp, uint256 einWinner);
     event Raffle(uint256 indexed lotteryId, bytes32 indexed queryId);
 
     struct Lottery {
@@ -42,6 +40,7 @@ contract HydroLottery is usingOraclize {
 
     IdentityRegistryInterface public identityRegistry;
     HydroTokenTestnetInterface public hydroToken;
+    RandomizerInterface public randomizer;
 
     // Lottery id => Lottery struct
     mapping(uint256 => Lottery) public lotteryById;
@@ -55,13 +54,13 @@ contract HydroLottery is usingOraclize {
     mapping(address => uint256) public escrowContracts;
     address[] public escrowContractsArray;
 
-    constructor(address _identityRegistryAddress, address _tokenAddress) public {
+    constructor(address _identityRegistryAddress, address _tokenAddress, address _randomizer) public {
         require(_identityRegistryAddress != address(0), 'The identity registry address is required');
         require(_tokenAddress != address(0), 'You must setup the token rinkeby address');
+        require(_randomizer != address(0), 'You must setup the randomizer rinkeby address');
         hydroToken = HydroTokenTestnetInterface(_tokenAddress);
         identityRegistry = IdentityRegistryInterface(_identityRegistryAddress);
-        // TODO Uncomment this when the contract is completed
-        /* oraclize_setProof(proofType_Ledger); */
+        randomizer = RandomizerInterface(_randomizer);
     }
 
     /// @notice Defines the lottery specification requires a HYDRO payment that will be used as escrow for this lottery. The escrow is a separate contract to hold people’s HYDRO funds not ether. Remember to approve() the right amount of HYDRO for this contract to set the hydro reward for the lottery.
@@ -128,11 +127,13 @@ contract HydroLottery is usingOraclize {
     function buyTicket(uint256 _lotteryNumber) public returns(uint256) {
         uint256 ein = identityRegistry.getEIN(msg.sender);
         uint256 allowance = hydroToken.allowance(msg.sender, address(this));
-        uint256 ticketPrice = lotteryById[_lotteryNumber].hydroPrice;
-        address escrowContract = lotteryById[_lotteryNumber].escrowContract;
+        Lottery memory lottery = lotteryById[_lotteryNumber];
+        uint256 ticketPrice = lottery.hydroPrice;
+        address escrowContract = lottery.escrowContract;
 
         require(ein != 0, 'You must have an EIN snowflake identifier associated with your address when buying tickets');
-        require(lotteryById[_lotteryNumber].exists, 'The lottery must exist for you to participate in it by buying a ticket');
+        require(lottery.exists, 'The lottery must exist for you to participate in it by buying a ticket');
+        require(now < lottery.endDate, 'The time to participate in the lottery is finished');
         require(allowance >= ticketPrice, 'Your allowance is not enough. You must approve() the right amount of HYDRO tokens for the price of this lottery ticket.');
         require(hydroToken.transferFrom(msg.sender, escrowContract, ticketPrice), 'The ticket purchase for this lottery must be successful when transfering tokens');
 
@@ -152,43 +153,31 @@ contract HydroLottery is usingOraclize {
         require(lottery.einWinner == 0, 'The raffle for this lottery has been completed already');
         require(now > lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
         require(senderEIN == lottery.einOwner, 'The raffle must be executed by the owner of the lottery');
-        generateNumberWinner(_lotteryNumber);
+
+        bytes32 queryId = randomizer.startGeneratingRandom();
+        endingLotteryIdByQueryId[queryId] = _lotteryNumber;
+        emit Raffle(_lotteryNumber, queryId);
     }
 
-    /// @notice Generates a random number between 1 and 10 both inclusive.
-    /// Must be payable because oraclize needs gas to generate a random number.
-    /// Can only be executed when the lottery ends.
-    /// @param _lotteryNumber The ID of the lottery to finish
-    function generateNumberWinner(uint256 _lotteryNumber) internal {
-      uint256 numberRandomBytes = 7;
-      uint256 delay = 0;
-      uint256 callbackGas = 200000;
+    /// @notice Can only be executed by the Randomizer contract. It select a winner for a given lottery number and query id.
+    /// @param _queryId The query ID used to generated the random number
+    /// @param _randomNumber The random number generated through oraclize
+    function endLottery(bytes32 _queryId, uint256 _randomNumber) public {
+        require(msg.sender == address(randomizer), 'The lottery can only be ended by the randomizer for selecting a random winner');
 
-      bytes32 queryId = oraclize_newRandomDSQuery(delay, numberRandomBytes, callbackGas);
-      endingLotteryIdByQueryId[queryId] = _lotteryNumber;
-      emit Raffle(_lotteryNumber, queryId);
+        uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
+        uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
+        string cutNumber = substring
+
+        // Select the winner based on his position in the array of participants
+        uint256 einWinner = lotteryById[lotteryId].einsParticipating[numberWinner];
+        emit LotteryEnded(lotteryId, now, einWinner);
     }
 
-   /// @notice Callback function that gets called by oraclize when the random number is generated
-   /// @param _queryId The query id that was generated to proofVerify
-   /// @param _result String that contains the number generated
-   /// @param _proof A string with a proof code to verify the authenticity of the number generation
-   function __callback(
-      bytes32 _queryId,
-      string memory  _result,
-      bytes memory _proof
-   ) public oraclize_randomDS_proofVerify(_queryId, _result, _proof) {
-
-      // Checks that the sender of this callback was in fact oraclize
-      require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
-
-      uint256 numberWinner = (uint256(keccak256(bytes(_result)))%10+1);
-      uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
-
-      // Select the winner based on his position in the array of participants
-      uint256 einWinner = lotteryById[lotteryId].einsParticipating[numberWinner];
-      emit LotteryEnded(lotteryId, now, einWinner);
-   }
+   /// @notice Selects the winner of the associated lottery id for this query id given that lottery's owner executed the raffle() function beforehand, this can only be executed by the randomizer contract
+   /// @param _queryId The id of the randomized query
+   /// @param _generatedNumber The random number generated by the randomizer contract for selecting a random winner
+   function selectWinner(bytes32 _queryId, uint256 _generatedNumber) public;
 
    /// @notice Returns all the lottery ids
    /// @return uint256[] The array of all lottery ids
