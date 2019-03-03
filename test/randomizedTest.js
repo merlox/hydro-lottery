@@ -7,17 +7,14 @@ const randomizedTestABI = JSON.parse(fs.readFileSync(join(__dirname, '../build/c
 const infura = 'wss://ropsten.infura.io/ws/v3/f7b2c280f3f440728c2b5458b41c663d'
 let randomizerTest = {}
 
-// 1. Write tests to deploy the token contract with truffle on ganache
-// 2. Deploy the identity registry
-// 3. Get an EIN for my account since it’s necessary
-// 4. Get tokens since we need them
-// 5. Run the createLottery function
 // Do test random key generation with my own oracle instead of oraclize since oraclize is expensive. When the tests are completed, deploy it to ropsten or rinkeby and use the real oraclize although it may only work on mainnet, test that.
-contract('HydroLottery', accounts => {
+contract('RandomizerTest', accounts => {
     // Deploy a new HydroLottery, Token and Registry before each test to avoid messing shit up while creatin an EIN and getting tokens
     beforeEach(async () => {
         web3 = new Web3(new Web3.providers.WebsocketProvider(infura))
-        contractAddress = ABI.networks['3'].address
+        contractAddress = randomizedTestABI.networks['3'].address
+        console.log('Deployed address', contractAddress)
+        console.log('Abi', randomizedTestABI)
         randomizerTest = new web3.eth.Contract(randomizedTestABI.abi, contractAddress)
 
         console.log('Listening to events...')
@@ -29,11 +26,12 @@ contract('HydroLottery', accounts => {
     })
 
     it('Should run oraclize', async () => {
-        await randomizerTest.methods.startGeneratingRandom().send({
-            from: accounts[0],
-            gas: 8e6,
-            value: 0.1
-        })
+        console.log('Starting random generation...')
+        // await randomizerTest.methods.startGeneratingRandom().send({
+        //     from: accounts[0],
+        //     gas: 8e6,
+        //     value: '100000000000000000' // 0.1 ETH in wei
+        // })
     })
 })
 

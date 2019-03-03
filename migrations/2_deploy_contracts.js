@@ -8,12 +8,13 @@ let identityRegistryInstance
 let randomizer
 
 module.exports = (deployer, network) => {
+    console.log('Running migrations deployer...')
     if(network != 'live'){
-        deployer.deploy(
-            RandomizerTest, {
-                gas: 8e6
-            }
-        )
+        // deployer.deploy(
+        //     RandomizerTest, {
+        //         gas: 8e6
+        //     }
+        // )
         // console.log('Deploying contracts...')
         // deployer.then(() => {
         //     return HydroTokenTestnet.new()

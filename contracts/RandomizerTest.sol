@@ -6,7 +6,7 @@ import './usingOraclize.sol';
 
 // Create a contract that inherits oraclize and has the address of the hydro lottery
 // A function that returns the query id and generates a random id which calls the hydro lottery
-contract Randomizer is usingOraclize {
+contract RandomizerTest is usingOraclize {
     event ShowRandomResult(string message, string result, string message2, uint256 generatedNumber, string message3, uint256 generatedCutNumber);
     address public owner;
 
