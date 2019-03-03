@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import './HydroLotteryInterface.sol';
-import './OraclizeAPI.sol';
+import './usingOraclize.sol';
 
 // Remember to setup the address of the hydroLottery contract before using it
 
