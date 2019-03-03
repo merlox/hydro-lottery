@@ -167,35 +167,48 @@ contract HydroLottery {
     function endLottery(bytes32 _queryId, uint256 _randomNumber) public {
         require(msg.sender == address(randomizer), 'The lottery can only be ended by the randomizer for selecting a random winner');
 
+        uint256 maxRandomValue = 1e10 - 1;
         uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
+        uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
 
-        // TODO Map the result to the desired range so if there are 40 partipants and the result was 9281, map 9281 in [0, 40] to [0, <whatever-maximum-number-set-by-oraclize] so that you can get a valid number within that range
-        // uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
+        // Map the ranges from the maximum random number to the number of participants
+        uint256 indexWinner = mapRanges(_randomNumber, 0, maxRandomValue, 0, numberOfParticipants);
+
+        // Just to make sure that we're generating the right values
+        require(indexWinner <= numberOfParticipants, 'The generated number must be equal or less the number of participants');
 
         // Select the winner based on his position in the array of participants
-        uint256 einWinner = lotteryById[lotteryId].einsParticipating[_randomNumber];
+        uint256 einWinner = lotteryById[lotteryId].einsParticipating[indexWinner];
         lotteryById[lotteryId].einWinner = einWinner;
         emit LotteryEnded(lotteryId, now, einWinner);
     }
 
-   /// @notice Returns all the lottery ids
-   /// @return uint256[] The array of all lottery ids
-   function getLotteryIds() public view returns(uint256[] memory) {
-       return lotteryIds;
-   }
+    /// @notice Maps a range to another and returns the scaled value
+    function mapRanges(uint256 value, uint256 fromMin, uint256 fromMax, uint256 toMin, uint256 toMax) public view returns(uint256) {
+        uint256 fromSpan = fromMax - fromMin;
+        uint256 toSpan = toMax - toMin;
+        uint256 valueScaled = (value - fromMin) / fromSpan;
+        return toMin + (valueScaled * toSpan);
+    }
 
-   /// @notice To get the ticketId given the lottery and ein
-   /// @param lotteryId The id of the lottery
-   /// @param ein The ein of the user that purchased the ticket
-   /// @return ticketId The Id of the ticket purchased, zero is also a valid identifier if there are more than 1 tickets purchased
-   function getTicketIdByEin(uint256 lotteryId, uint256 ein) public view returns(uint256 ticketId) {
-       ticketId = lotteryById[lotteryId].assignedLotteries[ein];
-   }
+    /// @notice Returns all the lottery ids
+    /// @return uint256[] The array of all lottery ids
+    function getLotteryIds() public view returns(uint256[] memory) {
+        return lotteryIds;
+    }
 
-   /// @notice To get the array of eins participating in a lottery
-   /// @param lotteryId The id of the lottery that you want to examine
-   /// @return uint256[] The array of EINs participating in the lottery that have purchased a ticket
-   function getEinsParticipatingInLottery(uint256 lotteryId) public view returns(uint256[] memory) {
-       return lotteryById[lotteryId].einsParticipating;
-   }
+    /// @notice To get the ticketId given the lottery and ein
+    /// @param lotteryId The id of the lottery
+    /// @param ein The ein of the user that purchased the ticket
+    /// @return ticketId The Id of the ticket purchased, zero is also a valid identifier if there are more than 1 tickets purchased
+    function getTicketIdByEin(uint256 lotteryId, uint256 ein) public view returns(uint256 ticketId) {
+        ticketId = lotteryById[lotteryId].assignedLotteries[ein];
+    }
+
+    /// @notice To get the array of eins participating in a lottery
+    /// @param lotteryId The id of the lottery that you want to examine
+    /// @return uint256[] The array of EINs participating in the lottery that have purchased a ticket
+    function getEinsParticipatingInLottery(uint256 lotteryId) public view returns(uint256[] memory) {
+        return lotteryById[lotteryId].einsParticipating;
+    }
 }

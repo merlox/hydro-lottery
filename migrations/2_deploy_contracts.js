@@ -8,37 +8,31 @@ let identityRegistryInstance
 let randomizer
 
 module.exports = (deployer, network) => {
-    console.log('Running migrations deployer...')
     if(network != 'live'){
-        // deployer.deploy(
-        //     RandomizerTest, {
-        //         gas: 8e6
-        //     }
-        // )
-        // console.log('Deploying contracts...')
-        // deployer.then(() => {
-        //     return HydroTokenTestnet.new()
-        // }).then(token => {
-        //     tokenInstance = token.address
-        //     console.log('Deployed token', tokenInstance)
-        //     return IdentityRegistry.new()
-        // }).then(identityRegistry => {
-        //     identityRegistryInstance = identityRegistry.address
-        //     console.log('Deployed identityRegistry', identityRegistryInstance)
-        //     return Randomizer.new()
-        // }).then(_randomizer => {
-        //     randomizer = _randomizer.address
-        //     console.log('Deployed randomizer', randomizer)
-        //     return deployer.deploy(
-        //         HydroLottery,
-        //         identityRegistryInstance,
-        //         tokenInstance,
-        //         randomizer, {
-        //             gas: 8e6
-        //         }
-        //     )
-        // }).then(hydroLottery => {
-        //     console.log('Deployed hydroLottery', hydroLottery.address)
-        // })
+        console.log('Deploying contracts...')
+        deployer.then(() => {
+            return HydroTokenTestnet.new()
+        }).then(token => {
+            tokenInstance = token.address
+            console.log('Deployed token', tokenInstance)
+            return IdentityRegistry.new()
+        }).then(identityRegistry => {
+            identityRegistryInstance = identityRegistry.address
+            console.log('Deployed identityRegistry', identityRegistryInstance)
+            return Randomizer.new()
+        }).then(_randomizer => {
+            randomizer = _randomizer.address
+            console.log('Deployed randomizer', randomizer)
+            return deployer.deploy(
+                HydroLottery,
+                identityRegistryInstance,
+                tokenInstance,
+                randomizer, {
+                    gas: 8e6
+                }
+            )
+        }).then(hydroLottery => {
+            console.log('Deployed hydroLottery', hydroLottery.address)
+        })
     }
 }

@@ -58,9 +58,8 @@ contract Randomizer is usingOraclize {
       // Checks that the sender of this callback was in fact oraclize
       require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
 
-      // TODO check the uint256(keccak256(bytes(_result)) uint256 and see how it looks like to accommodate it to your needs
-      /* uint256 generatedRandomNumber = (uint256(keccak256(bytes(_result)))%10+1); */
-      uint256 generatedRandomNumber = uint256(keccak256(bytes(_result)));
+      // Generates a number between 0 and 1 billion - 1
+      uint256 generatedRandomNumber = (uint256(keccak256(bytes(_result))) % 1e10);
       hydroLottery.endLottery(_queryId, generatedRandomNumber);
    }
 }
