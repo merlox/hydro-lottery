@@ -18,3 +18,6 @@ Oraclize is free for testnets: "To keep compatibility with the main-net deployed
 
 
 If oraclize fails, make sure to send some ether like 0.1 ETH (not wei)
+
+
+Oraclize gives you a gigantic number, you need to cut it to your size with mod and the map those ranges. For instance, if you have 584 participants in a lottery, you have to cut the randomNumber % 1000 since we only want 3 digits where 999 is the maximum and 000 is the minimum. Simply <your-random-number> to map [0, 999] to [0, 584] so that it gives you a number within range. This is not needed if the random value is within range already.
