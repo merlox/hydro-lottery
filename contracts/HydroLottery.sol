@@ -168,9 +168,9 @@ contract HydroLottery {
         require(msg.sender == address(randomizer), 'The lottery can only be ended by the randomizer for selecting a random winner');
 
         uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
-        uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
 
         // TODO Map the result to the desired range so if there are 40 partipants and the result was 9281, map 9281 in [0, 40] to [0, <whatever-maximum-number-set-by-oraclize] so that you can get a valid number within that range
+        // uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
 
         // Select the winner based on his position in the array of participants
         uint256 einWinner = lotteryById[lotteryId].einsParticipating[_randomNumber];

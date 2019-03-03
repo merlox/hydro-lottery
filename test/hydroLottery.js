@@ -25,7 +25,7 @@ contract('HydroLottery', accounts => {
         hydroToken = await HydroTokenTestnet.new()
         identityRegistry = await IdentityRegistry.new()
         randomizer = await Randomizer.new()
-        hydroLottery = await HydroLottery.new.estimateGas(identityRegistry.address, hydroToken.address, randomizer.address)
+        hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address, randomizer.address)
 
         // Set Hydro Lottery's address inside our Randomizer instance
         await randomizer.setHydroLottery(hydroLottery.address)
