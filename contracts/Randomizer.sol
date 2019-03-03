@@ -37,7 +37,7 @@ contract Randomizer is usingOraclize {
     /// @param _maxGeneratedNumber The largest number to generate since we want it to be between 0 and a maximum value
     /// @return queryId The queryId identifier to associate a lottery ID with a query ID
     function startGeneratingRandom() public onlyHydroLottery returns(bytes32 queryId) {
-        // TODO check that the number generated is between 0 and _maxGeneratedNumber
+        // TODO check that the number generated is between 0 and the desired range
         uint256 numberRandomBytes = 20;
         uint256 delay = 0;
         uint256 callbackGas = 2e6; // 2 million gas for the callback function so that it has more than enough gas

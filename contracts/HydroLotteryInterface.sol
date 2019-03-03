@@ -5,4 +5,7 @@ interface HydroLotteryInterface {
     function buyTicket(uint256 _lotteryNumber) external returns(uint256);
     function raffle(uint256 _lotteryNumber) external;
     function endLottery(bytes32 _queryId, uint256 _randomNumber) external;
+    function getLotteryIds() external view returns(uint256[] memory);
+    function getTicketIdByEin(uint256 lotteryId, uint256 ein) external view returns(uint256 ticketId);
+    function getEinsParticipatingInLottery(uint256 lotteryId) external view returns(uint256[] memory);
 }
