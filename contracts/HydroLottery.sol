@@ -15,6 +15,10 @@ import './OraclizeAPI.sol';
 /// @notice The Hydro Lottery smart contract to create decentralized lotteries for accounts that have an EIN Snowflake ID assciated with them. All payments are done in HYDRO instead of Ether.
 /// @author Merunas Grincalaitis <merunasgrincalaitis@gmail.com>
 contract HydroLottery is usingOraclize {
+    event LotteryStarted(uint256 indexed id, uint256 indexed beginningDate, uint256 indexed endDate);
+    event LotteryEnded(uint256 indexed id, uint256 indexed endTimestamp, uint256 indexed einWinner);
+    event Raffle(uint256 indexed lotteryId, bytes32 indexed queryId);
+
     struct Lottery {
         bool exists;
     	uint256 id;
@@ -43,6 +47,9 @@ contract HydroLottery is usingOraclize {
     mapping(uint256 => Lottery) public lotteryById;
     Lottery[] public lotteries;
     uint256[] public lotteryIds;
+
+    // Query ID for ending lotteries => Lottery ID to idenfity ending lotteries with oraclize's callback
+    mapping(bytes32 => uint256) public endingLotteryIdByQueryId;
 
     // Escrow contract's address => lottery number
     mapping(address => uint256) public escrowContracts;
@@ -110,6 +117,8 @@ contract HydroLottery is usingOraclize {
         lotteryById[newLotteryId] = newLottery;
         lotteryIds.push(newLotteryId);
 
+        emit LotteryStarted(newLotteryId, _beginningTimestamp, _endTimestamp);
+
         return newLotteryId;
     }
 
@@ -135,23 +144,29 @@ contract HydroLottery is usingOraclize {
         return ticketId;
     }
 
-    // Assigns a Snowflake ID to a lottery ID
-    function assignSnowflakeIdToLotteryId(uint256 _snowflakeId, uint256 _lotteryId) public {}
+    /// @notice Randomly selects one Snowflake ID associated to a lottery as the winner of the lottery and must be called by the owner of the lottery when the endDate is reached or later
+    function raffle(uint256 _lotteryNumber) public {
+        Lottery memory lottery = lotteryById[_lotteryNumber];
+        uint256 senderEIN = identityRegistry.getEIN(msg.sender);
 
-    // Randomly selects one Snowflake ID associated to a lottery, can be called several times
-    function raffle(uint256 _lotteryNumber) public returns(uint256 snoflakeIdWinner) {
-
+        require(lottery.einWinner == 0, 'The raffle for this lottery has been completed already');
+        require(now > lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
+        require(senderEIN == lottery.einOwner, 'The raffle must be executed by the owner of the lottery');
+        generateNumberWinner(_lotteryNumber);
     }
 
     /// @notice Generates a random number between 1 and 10 both inclusive.
     /// Must be payable because oraclize needs gas to generate a random number.
-    /// Can only be executed when the game ends.
-    function generateNumberWinner() internal {
+    /// Can only be executed when the lottery ends.
+    /// @param _lotteryNumber The ID of the lottery to finish
+    function generateNumberWinner(uint256 _lotteryNumber) internal {
       uint256 numberRandomBytes = 7;
       uint256 delay = 0;
       uint256 callbackGas = 200000;
 
       bytes32 queryId = oraclize_newRandomDSQuery(delay, numberRandomBytes, callbackGas);
+      endingLotteryIdByQueryId[queryId] = _lotteryNumber;
+      emit Raffle(_lotteryNumber, queryId);
     }
 
    /// @notice Callback function that gets called by oraclize when the random number is generated
@@ -165,14 +180,14 @@ contract HydroLottery is usingOraclize {
    ) public oraclize_randomDS_proofVerify(_queryId, _result, _proof) {
 
       // Checks that the sender of this callback was in fact oraclize
-      assert(msg.sender == oraclize_cbAddress());
+      require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
 
       uint256 numberWinner = (uint256(keccak256(bytes(_result)))%10+1);
-      distributePrizes();
-   }
+      uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
 
-   function distributePrizes() internal {
-
+      // Select the winner based on his position in the array of participants
+      uint256 einWinner = lotteryById[lotteryId].einsParticipating[numberWinner];
+      emit LotteryEnded(lotteryId, now, einWinner);
    }
 
    /// @notice Returns all the lottery ids
