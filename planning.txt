@@ -15,3 +15,6 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
 Then I'll test the lottery ending by buying 2, 10 and 20 valid tickets in 3 different tests and seeing if the numbers are valid.
 
 Oraclize is free for testnets: "To keep compatibility with the main-net deployed, smart contracts testing Oraclize on any of the testnets are expected to pay the same fee they would on the main-net. Since the payment expected is in testnet Ether, which holds no value, the calls to Oraclize are de facto free. Oraclize reserve the rights to discontinue the service for abuse or excessive use." https://docs.oraclize.it/#pricing
+
+
+If oraclize fails, make sure to send some ether like 0.1 ETH (not wei)

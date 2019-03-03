@@ -1,6 +1,5 @@
 pragma solidity ^0.5.0;
 
-import './HydroLotteryInterface.sol';
 import './usingOraclize.sol';
 
 // Remember to setup the address of the hydroLottery contract before using it
@@ -8,37 +7,19 @@ import './usingOraclize.sol';
 // Create a contract that inherits oraclize and has the address of the hydro lottery
 // A function that returns the query id and generates a random id which calls the hydro lottery
 contract Randomizer is usingOraclize {
-    HydroLotteryInterface public hydroLottery;
+    event ShowRandomResult(string message, string result, string message2, uint256 generatedNumber, string message3, uint256 generatedCutNumber);
     address public owner;
-
-    modifier onlyOwner {
-        require(msg.sender == owner, 'This function can only be executed by the owner of the contract');
-        _;
-    }
-
-    modifier onlyHydroLottery {
-        require(msg.sender == address(hydroLottery), 'This function can only be executed by the Hydro Lottery smart contract');
-        _;
-    }
 
     constructor () public {
         // TODO uncomment this since we can't have it when testing with ganache
-        /* oraclize_setProof(proofType_Ledger); */
-        owner = msg.sender;
-    }
-
-    /// @notice Set the address of the hydro lottery contract for communicating with it later
-    /// @param _hydroLottery The address of the lottery contract
-    function setHydroLottery(address _hydroLottery) public onlyOwner {
-        require(_hydroLottery != address(0), 'The hydro lottery address can only be set by the owner of this contract');
-        hydroLottery = HydroLotteryInterface(_hydroLottery);
+        oraclize_setProof(proofType_Ledger);
     }
 
     /// @notice Starts the process of ending a lottery by executing the function that generates random numbers from oraclize
     /// @return queryId The queryId identifier to associate a lottery ID with a query ID
-    function startGeneratingRandom() public payable onlyHydroLottery returns(bytes32 queryId) {
+    function startGeneratingRandom() public payable returns(bytes32 queryId) {
         // TODO check that the number generated is between 0 and the desired range
-        uint256 numberRandomBytes = 20;
+        uint256 numberRandomBytes = 5;
         uint256 delay = 0;
         uint256 callbackGas = 2e6; // 2 million gas for the callback function so that it has more than enough gas
 
@@ -58,9 +39,9 @@ contract Randomizer is usingOraclize {
       // Checks that the sender of this callback was in fact oraclize
       require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
 
-      // TODO check the uint256(keccak256(bytes(_result)) uint256 and see how it looks like to accommodate it to your needs
-      /* uint256 generatedRandomNumber = (uint256(keccak256(bytes(_result)))%10+1); */
       uint256 generatedRandomNumber = uint256(keccak256(bytes(_result)));
-      hydroLottery.endLottery(_queryId, generatedRandomNumber);
+      uint256 generatedCutNumber = (uint256(keccak256(bytes(_result)))%10+1);
+
+      emit ShowRandomResult('Merunas message', _result, 'Second message', generatedRandomNumber, 'Third message', generatedCutNumber);
    }
 }

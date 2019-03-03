@@ -148,7 +148,7 @@ contract HydroLottery {
     }
 
     /// @notice Randomly selects one Snowflake ID associated to a lottery as the winner of the lottery and must be called by the owner of the lottery when the endDate is reached or later
-    function raffle(uint256 _lotteryNumber) public {
+    function raffle(uint256 _lotteryNumber) public payable {
         Lottery memory lottery = lotteryById[_lotteryNumber];
         uint256 senderEIN = identityRegistry.getEIN(msg.sender);
 
@@ -156,7 +156,7 @@ contract HydroLottery {
         require(now > lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
         require(senderEIN == lottery.einOwner, 'The raffle must be executed by the owner of the lottery');
 
-        bytes32 queryId = randomizer.startGeneratingRandom();
+        bytes32 queryId = randomizer.startGeneratingRandom.value(msg.value)();
         endingLotteryIdByQueryId[queryId] = _lotteryNumber;
         emit Raffle(_lotteryNumber, queryId);
     }
