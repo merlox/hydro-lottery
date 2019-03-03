@@ -29,12 +29,11 @@ contract Randomizer is usingOraclize {
     /// @notice Set the address of the hydro lottery contract for communicating with it later
     /// @param _hydroLottery The address of the lottery contract
     function setHydroLottery(address _hydroLottery) public onlyOwner {
-        require(_hydroLottery != address(0));
+        require(_hydroLottery != address(0), 'The hydro lottery address can only be set by the owner of this contract');
         hydroLottery = HydroLotteryInterface(_hydroLottery);
     }
 
     /// @notice Starts the process of ending a lottery by executing the function that generates random numbers from oraclize
-    /// @param _maxGeneratedNumber The largest number to generate since we want it to be between 0 and a maximum value
     /// @return queryId The queryId identifier to associate a lottery ID with a query ID
     function startGeneratingRandom() public onlyHydroLottery returns(bytes32 queryId) {
         // TODO check that the number generated is between 0 and the desired range

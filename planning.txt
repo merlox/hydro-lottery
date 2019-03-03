@@ -1,0 +1,15 @@
+I'll find the range that oraclize is providing, how? By testing some results with 1 bytes to 20 bytes and seeing where those ranges land.
+I'll find a testing oraclize api for just that. Then I'll adjust those values to my desired lottery randomization with a mapping function based on this python one:
+
+def translate(value, leftMin, leftMax, rightMin, rightMax):
+    # Figure out how 'wide' each range is
+    leftSpan = leftMax - leftMin
+    rightSpan = rightMax - rightMin
+
+    # Convert the left range into a 0-1 range (float)
+    valueScaled = float(value - leftMin) / float(leftSpan)
+
+    # Convert the 0-1 range into a value in the right range.
+    return rightMin + (valueScaled * rightSpan)
+
+Then I'll test the lottery ending by buying 2, 10 and 20 valid tickets in 3 different tests and seeing if the numbers are valid.

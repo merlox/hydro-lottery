@@ -14,7 +14,7 @@ import './RandomizerInterface.sol';
 
 /// @notice The Hydro Lottery smart contract to create decentralized lotteries for accounts that have an EIN Snowflake ID assciated with them. All payments are done in HYDRO instead of Ether.
 /// @author Merunas Grincalaitis <merunasgrincalaitis@gmail.com>
-contract HydroLottery is usingOraclize {
+contract HydroLottery {
     event LotteryStarted(uint256 indexed id, uint256 beginningDate, uint256 endDate);
     event LotteryEnded(uint256 indexed id, uint256 endTimestamp, uint256 einWinner);
     event Raffle(uint256 indexed lotteryId, bytes32 indexed queryId);

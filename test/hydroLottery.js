@@ -4,11 +4,13 @@ const { join } = require('path')
 const Web3 = require('web3')
 const IdentityRegistry = artifacts.require('IdentityRegistry')
 const HydroTokenTestnet = artifacts.require('HydroTokenTestnet')
+const Randomizer = artifacts.require('Randomizer')
 const HydroLottery = artifacts.require('HydroLottery')
 const hydroLotteryABI = JSON.parse(fs.readFileSync(join(__dirname, '../build/contracts', 'HydroLottery.json')))
 let hydroToken = {}
 let identityRegistry = {}
 let hydroLottery = {}
+let randomizer = {}
 
 // 1. Write tests to deploy the token contract with truffle on ganache
 // 2. Deploy the identity registry
@@ -22,14 +24,11 @@ contract('HydroLottery', accounts => {
         web3 = new Web3(new Web3.providers.WebsocketProvider('http://localhost:8545'))
         hydroToken = await HydroTokenTestnet.new()
         identityRegistry = await IdentityRegistry.new()
-        hydroLottery = await HydroLottery.new.estimateGas(identityRegistry.address, hydroToken.address, {
-            from: accounts[0],
-            gas: 8e6
-        })
+        randomizer = await Randomizer.new()
+        hydroLottery = await HydroLottery.new.estimateGas(identityRegistry.address, hydroToken.address, randomizer.address)
 
-        console.log('Gas', hydroLottery)
-        process.exit(0)
-
+        // Set Hydro Lottery's address inside our Randomizer instance
+        await randomizer.setHydroLottery(hydroLottery.address)
         // EIN 1
         await identityRegistry.createIdentity(accounts[0], accounts, accounts)
         // EIN 2
