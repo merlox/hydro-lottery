@@ -82,7 +82,6 @@ contract HydroLottery {
         require(_fee >= 0 && _fee <= 100, 'The fee must be between 0 and 100 (in percentage without the % symbol)');
         require(hydroToken.balanceOf(msg.sender) >= _hydroReward, 'You must have enough token funds for the reward');
         require(_hydroReward > 0, 'The reward must be larger than zero');
-        require(_beginningTimestamp >= now, 'The lottery must start now or in the future');
         require( _endTimestamp > _beginningTimestamp, 'The lottery must end after the start not earlier');
         require(_feeReceiver != address(0), 'You need to specify the fee receiver even if its yourself');
 

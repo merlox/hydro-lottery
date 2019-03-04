@@ -35,6 +35,8 @@ contract('HydroLottery', accounts => {
         await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1] })
         // EIN 3
         await identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[2] })
+        // EIN 4
+        await identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[3] })
     })
 
     it('Should create a new lottery', async () => {
@@ -48,12 +50,6 @@ contract('HydroLottery', accounts => {
         const fee = 10
         const feeReceiver = accounts[0]
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
-
-        // First reduce the allowance to 0 to avoid race conditions
-        await hydroToken.approve(hydroLottery.address, 0, {
-            from: accounts[0],
-            gas: 8e6
-        })
 
         // Then do the right approval
         await hydroToken.approve(hydroLottery.address, hydroReward, {
@@ -92,12 +88,6 @@ contract('HydroLottery', accounts => {
         const feeReceiver = accounts[0]
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
 
-        // First reduce the allowance to 0 to avoid race conditions
-        await hydroToken.approve(hydroLottery.address, 0, {
-            from: accounts[0],
-            gas: 8e6
-        })
-
         // Then do the right approval
         await hydroToken.approve(hydroLottery.address, hydroReward, {
             from: accounts[0],
@@ -127,11 +117,6 @@ contract('HydroLottery', accounts => {
         const endTime = Math.floor(new Date().getTime() / 1000) + 1e6
         const fee = 10
         const feeReceiver = accounts[0]
-        // First reduce the allowance to 0 to avoid race conditions
-        await hydroToken.approve(hydroLottery.address, 0, {
-            from: accounts[0],
-            gas: 8e6
-        })
         // Then do the right approval
         await hydroToken.approve(hydroLottery.address, hydroReward, {
             from: accounts[0],
@@ -147,11 +132,6 @@ contract('HydroLottery', accounts => {
         // Buy 2 lottery tickets to properly check the id since the first once is zero
         const lottery = await hydroLottery.lotteryById(id)
 
-        // First reduce the allowance to 0 to avoid race conditions
-        await hydroToken.approve(hydroLottery.address, 0, {
-            from: accounts[0],
-            gas: 8e6
-        })
         // Then do the right approval
         await hydroToken.approve(hydroLottery.address, hydroPrice, {
             from: accounts[0],
@@ -165,11 +145,6 @@ contract('HydroLottery', accounts => {
         // Transfer tokens to the second account so he can buy some
         await hydroToken.transfer(accounts[1], 100, {
             from: accounts[0],
-            gas: 8e6
-        })
-        // First reduce the allowance to 0 to avoid race conditions
-        await hydroToken.approve(hydroLottery.address, 0, {
-            from: accounts[1],
             gas: 8e6
         })
         // Then do the right approval
@@ -188,7 +163,94 @@ contract('HydroLottery', accounts => {
         assert.equal(secondEinTicket, 1, 'The lottery Id of the second ticket must be one to confirm that is has been purchased')
         assert.equal(totalTickets, 2, 'There must be two tickets purchased')
     })
+
+    it('Should end a lottery after the time runs out with the raffle() function', async () => {
+        const lotteryId = 0
+        const hydroPrice = 100
+        const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
+        const name = fillBytes32WithSpaces('Example')
+        const description = 'This is an example'
+        const hydroReward = 1000
+        const startTime = Math.floor(new Date().getTime() / 1000)
+        const endTime = Math.floor(new Date().getTime() / 1000) + 2e6 // 200 seconds after now
+        const fee = 10
+        const feeReceiver = accounts[0]
+
+        const counterTime = new Date().getTime()
+
+        await hydroToken.approve(hydroLottery.address, hydroReward, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        // Transfer tokens to the second account so he can buy some
+        await hydroToken.transfer(accounts[1], 100, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        await hydroToken.approve(hydroLottery.address, hydroPrice, {
+            from: accounts[1],
+            gas: 8e6
+        })
+        await hydroLottery.buyTicket(lotteryId, {
+            from: accounts[1],
+            gas: 8e6
+        })
+        // Transfer tokens to the third account so he can buy some
+        await hydroToken.transfer(accounts[2], 100, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        await hydroToken.approve(hydroLottery.address, hydroPrice, {
+            from: accounts[2],
+            gas: 8e6
+        })
+        await hydroLottery.buyTicket(lotteryId, {
+            from: accounts[2],
+            gas: 8e6
+        })
+        // Transfer tokens to the fourth account so he can buy some
+        await hydroToken.transfer(accounts[3], 100, {
+            from: accounts[0],
+            gas: 8e6
+        })
+        await hydroToken.approve(hydroLottery.address, hydroPrice, {
+            from: accounts[3],
+            gas: 8e6
+        })
+        await hydroLottery.buyTicket(lotteryId, {
+            from: accounts[3],
+            gas: 8e6
+        })
+
+        counterTime = Math.floor((new Date().getTime() - counterTime) / 1000)
+
+        // If the contract time has not been reached yet, wait a bit
+        if(counterTime < endTime) await asyncSetTimeout((counterTime - endTime) + 1e3)
+
+        // To run the raffle we need to create the lottery, add 3 participants, run the time to the future and run the raffle()
+        await hydroLottery.raffle(lotteryId, {
+            from: accounts[0],
+            gas: 8e6,
+            value: '100000000000000000' // 0.1 ETH in wei
+        })
+        await asyncSetTimeout(1e6) // Wait 100 seconds for oraclize to generate the random number
+
+        const lottery = await hydroLottery.lotteryById(lotteryId)
+        assert.ok(lottery.einWinner != 0, 'The lottery winner must be set')
+    })
 })
+
+function asyncSetTimeout(time) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve()
+        }, time)
+    })
+}
 
 // To test bytes32 functions
 function fillBytes32WithSpaces(name) {

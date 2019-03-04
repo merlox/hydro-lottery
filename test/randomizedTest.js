@@ -20,16 +20,17 @@ contract('RandomizerTest', accounts => {
         })
     })
 
-    it('Should run oraclize', async () => {
-        console.log('Starting random generation...')
-        await randomizerTest.startGeneratingRandom({
-            from: accounts[0],
-            gas: 8e6,
-            value: '100000000000000000' // 0.1 ETH in wei
-        })
-        console.log('Waiting 1000 seconds for the event from __callback()...')
-        await asyncSetTimeout(1000e3)
-    })
+    // Skip it to stop running this test
+    // it.skip('Should run oraclize', async () => {
+    //     console.log('Starting random generation...')
+    //     await randomizerTest.startGeneratingRandom({
+    //         from: accounts[0],
+    //         gas: 8e6,
+    //         value: '100000000000000000' // 0.1 ETH in wei
+    //     })
+    //     console.log('Waiting 1000 seconds for the event from __callback()...')
+    //     await asyncSetTimeout(1000e3)
+    // })
 })
 
 function asyncSetTimeout(time) {

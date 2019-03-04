@@ -22,8 +22,7 @@ contract Randomizer is usingOraclize {
     }
 
     constructor () public {
-        // TODO uncomment this since we can't have it when testing with ganache
-        /* oraclize_setProof(proofType_Ledger); */
+        oraclize_setProof(proofType_Ledger);
         owner = msg.sender;
     }
 
