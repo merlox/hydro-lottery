@@ -1,7 +1,6 @@
 const assert = require('assert')
 const fs = require('fs')
 const { join } = require('path')
-const Web3 = require('web3')
 const IdentityRegistry = artifacts.require('IdentityRegistry')
 const HydroTokenTestnet = artifacts.require('HydroTokenTestnet')
 const Randomizer = artifacts.require('Randomizer')
@@ -20,26 +19,29 @@ let randomizer = {}
 // Do test random key generation with my own oracle instead of oraclize since oraclize is expensive. When the tests are completed, deploy it to ropsten or rinkeby and use the real oraclize although it may only work on mainnet, test that.
 contract('HydroLottery', accounts => {
     // Deploy a new HydroLottery, Token and Registry before each test to avoid messing shit up while creatin an EIN and getting tokens
-    beforeEach(async () => {
-        web3 = new Web3(new Web3.providers.WebsocketProvider('http://localhost:8545'))
-        hydroToken = await HydroTokenTestnet.new()
-        identityRegistry = await IdentityRegistry.new()
-        randomizer = await Randomizer.new()
-        hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address, randomizer.address)
+    before(async () => {
+        hydroToken = await HydroTokenTestnet.new({gas: 8e6})
+        identityRegistry = await IdentityRegistry.new({gas: 8e6})
+        randomizer = await Randomizer.new({gas: 8e6})
+        hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address, randomizer.address, {gas: 8e6})
 
+        // hydroToken = await HydroTokenTestnet.deployed()
+        // identityRegistry = await IdentityRegistry.deployed()
+        // randomizer = await Randomizer.deployed()
+        // hydroLottery = await HydroLottery.deployed()
+
+        console.log('Setting lottery on randomizer')
         // Set Hydro Lottery's address inside our Randomizer instance
         await randomizer.setHydroLottery(hydroLottery.address)
+        console.log('Creating identity one')
         // EIN 1
         await identityRegistry.createIdentity(accounts[0], accounts, accounts)
+        console.log('Creating identity two')
         // EIN 2
         await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1] })
-        // EIN 3
-        await identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[2] })
-        // EIN 4
-        await identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[3] })
     })
 
-    it('Should create a new lottery', async () => {
+    it.skip('Should create a new lottery', async () => {
         const id = 0
         const name = fillBytes32WithSpaces('Example')
         const description = 'This is an example'
@@ -76,7 +78,7 @@ contract('HydroLottery', accounts => {
         assert.equal(fee, lottery.fee, 'The lottery fee has not been setup properly')
     })
 
-    it('Should move the hydro token reward to the escrow contract when creating a new lottery', async () => {
+    it.skip('Should move the hydro token reward to the escrow contract when creating a new lottery', async () => {
         const id = 0
         const name = fillBytes32WithSpaces('Example')
         const description = 'This is an example'
@@ -106,7 +108,7 @@ contract('HydroLottery', accounts => {
         assert.equal(escrowTokenBalance, hydroReward, 'The token balance inside the escrow contract must be the hydro reward when deploying a new lottery')
     })
 
-    it('Should buy a ticket for a lottery successfully with enough funds', async () => {
+    it.skip('Should buy a ticket for a lottery successfully with enough funds', async () => {
         const id = 0
         const hydroPrice = 100
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
@@ -172,12 +174,19 @@ contract('HydroLottery', accounts => {
         const description = 'This is an example'
         const hydroReward = 1000
         const startTime = Math.floor(new Date().getTime() / 1000)
-        const endTime = Math.floor(new Date().getTime() / 1000) + 2e6 // 200 seconds after now
+        const endTime = Math.floor(new Date().getTime() / 1000) + 100 // 100 seconds after now
         const fee = 10
         const feeReceiver = accounts[0]
+        let counterTime = Math.floor(new Date().getTime() / 1000)
 
-        const counterTime = new Date().getTime()
+        console.log('Setting up ein 3...')
+        // EIN 3
+        await identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[2] })
+        console.log('Setting up ein 4...')
+        // EIN 4
+        await identityRegistry.createIdentity(accounts[3], accounts, accounts, { from: accounts[3] })
 
+        console.log('Creating lottery...')
         await hydroToken.approve(hydroLottery.address, hydroReward, {
             from: accounts[0],
             gas: 8e6
@@ -186,6 +195,8 @@ contract('HydroLottery', accounts => {
             from: accounts[0],
             gas: 8e6
         })
+
+        console.log('Buying ticket 1...')
         // Transfer tokens to the second account so he can buy some
         await hydroToken.transfer(accounts[1], 100, {
             from: accounts[0],
@@ -199,6 +210,7 @@ contract('HydroLottery', accounts => {
             from: accounts[1],
             gas: 8e6
         })
+        console.log('Buying ticket 2...')
         // Transfer tokens to the third account so he can buy some
         await hydroToken.transfer(accounts[2], 100, {
             from: accounts[0],
@@ -212,6 +224,7 @@ contract('HydroLottery', accounts => {
             from: accounts[2],
             gas: 8e6
         })
+         console.log('Buying ticket 3...')
         // Transfer tokens to the fourth account so he can buy some
         await hydroToken.transfer(accounts[3], 100, {
             from: accounts[0],
@@ -226,10 +239,13 @@ contract('HydroLottery', accounts => {
             gas: 8e6
         })
 
-        counterTime = Math.floor((new Date().getTime() - counterTime) / 1000)
-
         // If the contract time has not been reached yet, wait a bit
-        if(counterTime < endTime) await asyncSetTimeout((counterTime - endTime) + 1e3)
+        while(counterTime < endTime) {
+            console.log('Counter', counterTime)
+            console.log('End time', endTime)
+            counterTime = Math.floor(new Date().getTime() / 1000)
+            await asyncSetTimeout(5e3)
+        }
 
         // To run the raffle we need to create the lottery, add 3 participants, run the time to the future and run the raffle()
         await hydroLottery.raffle(lotteryId, {
