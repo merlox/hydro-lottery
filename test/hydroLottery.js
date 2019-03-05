@@ -20,9 +20,13 @@ let randomizer = {}
 contract('HydroLottery', accounts => {
     // Deploy a new HydroLottery, Token and Registry before each test to avoid messing shit up while creatin an EIN and getting tokens
     before(async () => {
+        console.log('Deploying new hydro token...')
         hydroToken = await HydroTokenTestnet.new({gas: 8e6})
+        console.log('Deploying new identity registry...')
         identityRegistry = await IdentityRegistry.new({gas: 8e6})
+        console.log('Deploying new randomizer...')
         randomizer = await Randomizer.new({gas: 8e6})
+        console.log('Deploying new hydro lottery...')
         hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address, randomizer.address, {gas: 8e6})
 
         // hydroToken = await HydroTokenTestnet.deployed()
@@ -174,7 +178,7 @@ contract('HydroLottery', accounts => {
         const description = 'This is an example'
         const hydroReward = 1000
         const startTime = Math.floor(new Date().getTime() / 1000)
-        const endTime = Math.floor(new Date().getTime() / 1000) + 100 // 100 seconds after now
+        const endTime = Math.floor(new Date().getTime() / 1000) + 300 // 300 seconds after now
         const fee = 10
         const feeReceiver = accounts[0]
         let counterTime = Math.floor(new Date().getTime() / 1000)
@@ -196,44 +200,50 @@ contract('HydroLottery', accounts => {
             gas: 8e6
         })
 
-        console.log('Buying ticket 1...')
+        console.log('Buying ticket 1 transfer...')
         // Transfer tokens to the second account so he can buy some
-        await hydroToken.transfer(accounts[1], 100, {
+        await hydroToken.transfer(accounts[1], hydroPrice, {
             from: accounts[0],
             gas: 8e6
         })
+        console.log('Buying ticket 1 approve...')
         await hydroToken.approve(hydroLottery.address, hydroPrice, {
             from: accounts[1],
             gas: 8e6
         })
+        console.log('Buying ticket 1 buy...')
         await hydroLottery.buyTicket(lotteryId, {
             from: accounts[1],
             gas: 8e6
         })
-        console.log('Buying ticket 2...')
+        console.log('Buying ticket 2 transfer...')
         // Transfer tokens to the third account so he can buy some
-        await hydroToken.transfer(accounts[2], 100, {
+        await hydroToken.transfer(accounts[2], hydroPrice, {
             from: accounts[0],
             gas: 8e6
         })
+        console.log('Buying ticket 2 approve...')
         await hydroToken.approve(hydroLottery.address, hydroPrice, {
             from: accounts[2],
             gas: 8e6
         })
+        console.log('Buying ticket 2 buy...')
         await hydroLottery.buyTicket(lotteryId, {
             from: accounts[2],
             gas: 8e6
         })
-         console.log('Buying ticket 3...')
+        console.log('Buying ticket 3 transfer...')
         // Transfer tokens to the fourth account so he can buy some
-        await hydroToken.transfer(accounts[3], 100, {
+        await hydroToken.transfer(accounts[3], hydroPrice, {
             from: accounts[0],
             gas: 8e6
         })
+        console.log('Buying ticket 3 approve...')
         await hydroToken.approve(hydroLottery.address, hydroPrice, {
             from: accounts[3],
             gas: 8e6
         })
+        console.log('Buying ticket 3 buy...')
         await hydroLottery.buyTicket(lotteryId, {
             from: accounts[3],
             gas: 8e6
@@ -247,15 +257,17 @@ contract('HydroLottery', accounts => {
             await asyncSetTimeout(5e3)
         }
 
+        console.log('Running raffle after time is up...')
         // To run the raffle we need to create the lottery, add 3 participants, run the time to the future and run the raffle()
         await hydroLottery.raffle(lotteryId, {
             from: accounts[0],
             gas: 8e6,
             value: '100000000000000000' // 0.1 ETH in wei
         })
-        await asyncSetTimeout(1e6) // Wait 100 seconds for oraclize to generate the random number
+        await asyncSetTimeout(1e3 * 100) // Wait 100 seconds for oraclize to generate the random number
 
         const lottery = await hydroLottery.lotteryById(lotteryId)
+        console.log('Final lottery', lottery)
         assert.ok(lottery.einWinner != 0, 'The lottery winner must be set')
     })
 })
