@@ -182,6 +182,7 @@ contract('HydroLottery', accounts => {
         const fee = 10
         const feeReceiver = accounts[0]
         let counterTime = Math.floor(new Date().getTime() / 1000)
+        let approval
 
         console.log('Setting up ein 3...')
         // EIN 3
@@ -190,11 +191,22 @@ contract('HydroLottery', accounts => {
         // EIN 4
         await identityRegistry.createIdentity(accounts[3], accounts, accounts, { from: accounts[3] })
 
-        console.log('Creating lottery...')
+        console.log('Creating lottery\'s approval...')
         await hydroToken.approve(hydroLottery.address, hydroReward, {
             from: accounts[0],
             gas: 8e6
         })
+
+        approval = parseInt(await hydroToken.allowance(accounts[0], hydroLottery.address))
+        console.log('The approval right now is', approval)
+        while(approval == 0) {
+            console.log('Waiting for approval confirmation... 10 seconds')
+            await asyncSetTimeout(1e3 * 10) // Wait 10 seconds for confirming the approval before buying
+            approval = parseInt(await hydroToken.allowance(accounts[0], hydroLottery.address))
+            console.log('The approval right now is', approval)
+        }
+
+        console.log('Creating lottery...')
         await hydroLottery.createLottery(name, description, hydroPrice, hydroReward, startTime, endTime, fee, feeReceiver, {
             from: accounts[0],
             gas: 8e6
@@ -211,6 +223,16 @@ contract('HydroLottery', accounts => {
             from: accounts[1],
             gas: 8e6
         })
+
+        approval = parseInt(await hydroToken.allowance(accounts[0], accounts[1]))
+        console.log('The approval right now is', approval)
+        while(approval == 0) {
+            console.log('Waiting for approval confirmation... 10 seconds')
+            await asyncSetTimeout(1e3 * 10) // Wait 10 seconds for confirming the approval before buying
+            approval = parseInt(await hydroToken.allowance(accounts[0], accounts[1]))
+            console.log('The approval right now is', approval)
+        }
+
         console.log('Buying ticket 1 buy...')
         await hydroLottery.buyTicket(lotteryId, {
             from: accounts[1],
@@ -227,6 +249,16 @@ contract('HydroLottery', accounts => {
             from: accounts[2],
             gas: 8e6
         })
+
+        approval = parseInt(await hydroToken.allowance(accounts[0], accounts[2]))
+        console.log('The approval right now is', approval)
+        while(approval == 0) {
+            console.log('Waiting for approval confirmation... 10 seconds')
+            await asyncSetTimeout(1e3 * 10) // Wait 10 seconds for confirming the approval before buying
+            approval = parseInt(await hydroToken.allowance(accounts[0], accounts[2]))
+            console.log('The approval right now is', approval)
+        }
+
         console.log('Buying ticket 2 buy...')
         await hydroLottery.buyTicket(lotteryId, {
             from: accounts[2],
@@ -243,6 +275,16 @@ contract('HydroLottery', accounts => {
             from: accounts[3],
             gas: 8e6
         })
+
+        approval = parseInt(await hydroToken.allowance(accounts[0], accounts[3]))
+        console.log('The approval right now is', approval)
+        while(approval == 0) {
+            console.log('Waiting for approval confirmation... 10 seconds')
+            await asyncSetTimeout(1e3 * 10) // Wait 10 seconds for confirming the approval before buying
+            approval = parseInt(await hydroToken.allowance(accounts[0], accounts[3]))
+            console.log('The approval right now is', approval)
+        }
+
         console.log('Buying ticket 3 buy...')
         await hydroLottery.buyTicket(lotteryId, {
             from: accounts[3],
