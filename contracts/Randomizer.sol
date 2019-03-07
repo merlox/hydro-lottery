@@ -22,7 +22,7 @@ contract Randomizer is usingOraclize {
     }
 
     constructor () public {
-        oraclize_setProof(proofType_Ledger);
+        /* oraclize_setProof(proofType_Ledger); */
         owner = msg.sender;
     }
 
