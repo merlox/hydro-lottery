@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.4;
 
 contract HydroEscrow {
     uint256 public endTimestamp;

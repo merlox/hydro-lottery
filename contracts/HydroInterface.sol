@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.4;
 
 interface HydroInterface {
     function balances(address) external view returns (uint);

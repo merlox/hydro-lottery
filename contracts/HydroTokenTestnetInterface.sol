@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.4;
 
 contract HydroTokenTestnetInterface {
     function transfer(address _to, uint256 _amount) public returns (bool success);

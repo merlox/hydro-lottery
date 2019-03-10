@@ -1,5 +1,4 @@
-pragma solidity ^0.5.0;
-
+pragma solidity ^0.5.4;
 // NOTE: Delegacall does NOT update state of the receiving contract!!
 // Try to update the state with delegatecall -> call -> to contract since call() does indeed update the storage
 // 1. Deploy Something, then Middleware, then HydroLottery
