@@ -22,12 +22,16 @@ contract('HydroLottery', accounts => {
     before(async () => {
         console.log('Deploying new hydro token...')
         hydroToken = await HydroTokenTestnet.new({gas: 8e6})
+        console.log('Deployed hydro token', hydroToken.address)
         console.log('Deploying new identity registry...')
         identityRegistry = await IdentityRegistry.new({gas: 8e6})
+        console.log('Deployed registry', identityRegistry.address)
         console.log('Deploying new randomizer...')
         randomizer = await Randomizer.new({gas: 8e6})
+        console.log('Deployed randomizer', randomizer.address)
         console.log('Deploying new hydro lottery...')
         hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address, randomizer.address, {gas: 8e6})
+        console.log('Deployed lottery', hydroLottery.address)
 
         // hydroToken = await HydroTokenTestnet.deployed()
         // identityRegistry = await IdentityRegistry.deployed()
@@ -178,7 +182,7 @@ contract('HydroLottery', accounts => {
         const description = 'This is an example'
         const hydroReward = 1000
         const startTime = Math.floor(new Date().getTime() / 1000)
-        const endTime = Math.floor(new Date().getTime() / 1000) + 1000 // 1000 seconds after now
+        const endTime = Math.floor(new Date().getTime() / 1000) + 500 // 500 seconds after now
         const fee = 10
         const feeReceiver = accounts[0]
         let counterTime = Math.floor(new Date().getTime() / 1000)
@@ -283,6 +287,7 @@ contract('HydroLottery', accounts => {
             value: '100000000000000000' // 0.1 ETH in wei
         })
         await waitFiveConfirmations(transaction)
+        console.log('Waiting 100 seconds for oraclize to catch up')
         await asyncSetTimeout(1e3 * 100) // Wait 100 seconds for oraclize to generate the random number
 
         const lottery = await hydroLottery.lotteryById(lotteryId)
