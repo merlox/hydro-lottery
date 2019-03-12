@@ -33,11 +33,6 @@ contract('HydroLottery', accounts => {
         hydroLottery = await HydroLottery.new(identityRegistry.address, hydroToken.address, randomizer.address, {gas: 8e6})
         console.log('Deployed lottery', hydroLottery.address)
 
-        // hydroToken = await HydroTokenTestnet.deployed()
-        // identityRegistry = await IdentityRegistry.deployed()
-        // randomizer = await Randomizer.deployed()
-        // hydroLottery = await HydroLottery.deployed()
-
         console.log('Setting lottery on randomizer')
         // Set Hydro Lottery's address inside our Randomizer instance
         await randomizer.setHydroLottery(hydroLottery.address, {gas: 8e6})
@@ -49,7 +44,7 @@ contract('HydroLottery', accounts => {
         await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1], gas: 8e6 })
     })
 
-    it.skip('Should create a new lottery', async () => {
+    it('Should create a new lottery', async () => {
         const id = 0
         const name = fillBytes32WithSpaces('Example')
         const description = 'This is an example'
@@ -86,7 +81,7 @@ contract('HydroLottery', accounts => {
         assert.equal(fee, lottery.fee, 'The lottery fee has not been setup properly')
     })
 
-    it.skip('Should move the hydro token reward to the escrow contract when creating a new lottery', async () => {
+    it('Should move the hydro token reward to the escrow contract when creating a new lottery', async () => {
         const id = 0
         const name = fillBytes32WithSpaces('Example')
         const description = 'This is an example'
@@ -116,7 +111,7 @@ contract('HydroLottery', accounts => {
         assert.equal(escrowTokenBalance, hydroReward, 'The token balance inside the escrow contract must be the hydro reward when deploying a new lottery')
     })
 
-    it.skip('Should buy a ticket for a lottery successfully with enough funds', async () => {
+    it('Should buy a ticket for a lottery successfully with enough funds', async () => {
         const id = 0
         const hydroPrice = 100
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
