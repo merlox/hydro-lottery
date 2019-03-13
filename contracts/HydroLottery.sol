@@ -155,7 +155,8 @@ contract HydroLottery {
         require(now > lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
         require(senderEIN == lottery.einOwner, 'The raffle must be executed by the owner of the lottery');
 
-        bytes32 queryId = randomizer.startGeneratingRandom.value(msg.value)();
+        uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
+        bytes32 queryId = randomizer.startGeneratingRandom.value(msg.value)(numberOfParticipants); // The randomizer generates a number between 0 and the number of participants
         endingLotteryIdByQueryId[queryId] = _lotteryNumber;
         emit Raffle(_lotteryNumber, queryId);
     }
@@ -165,29 +166,13 @@ contract HydroLottery {
     /// @param _randomNumber The random number generated through oraclize
     function endLottery(bytes32 _queryId, uint256 _randomNumber) public {
         require(msg.sender == address(randomizer), 'The lottery can only be ended by the randomizer for selecting a random winner');
-
-        // Our range is 0 to 1^10. A random number will be generated between those ranges. So if we have 400 participants the smaller range will be 0 to 400. Simply map those values.
-        /*
-        1^10 -> 100%
-        randomNumber -> x
-        x% = 100 * randomNumber / 1^10
-        then we take that % and we multiply it by the number of paritipants
-        winner = x% / 100 * numberOfParticipants
-        or
-        winner = 100 * randomNumber / 1^10 / 100 * numberOfParticipants
-        */
-
         uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
-        uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
-
-        // Map the ranges from the maximum random number to the number of participants
-        uint256 indexWinner = 100 * _randomNumber / 1e10 / 100 * numberOfParticipants;
 
         // Just to make sure that we're generating the right values
-        require(indexWinner <= numberOfParticipants, 'The generated number must be equal or less the number of participants');
+        require(_randomNumber <= numberOfParticipants, 'The generated number must be equal or less the number of participants');
 
         // Select the winner based on his position in the array of participants
-        uint256 einWinner = lotteryById[lotteryId].einsParticipating[indexWinner];
+        uint256 einWinner = lotteryById[lotteryId].einsParticipating[_randomNumber];
         lotteryById[lotteryId].einWinner = einWinner;
         emit LotteryEnded(lotteryId, now, einWinner);
     }

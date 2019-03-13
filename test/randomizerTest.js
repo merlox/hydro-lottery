@@ -33,7 +33,7 @@ contract('RandomizerTest', accounts => {
         await randomizerTest.startGeneratingRandom({
             from: accounts[0],
             gas: 8e6,
-            value: new String(web3.utils.toWei(0.1)) // 0.5 ETH in wei
+            value: '100000000000000000' // 0.1 ETH in wei
         })
         console.log('Waiting 1000 seconds for the event from __callback()...')
         await asyncSetTimeout(1000e3)

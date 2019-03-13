@@ -16,7 +16,7 @@ contract RandomizerTest is usingOraclize {
     /// @notice Starts the process of ending a lottery by executing the function that generates random numbers from oraclize
     function startGeneratingRandom() public payable {
         emit Called('The function has been called');
-        oraclize_query("WolframAlpha", "random number between 1 and 100");
+        oraclize_query("WolframAlpha", "random number between 0 and 1^10");
     }
 
    /// @notice Callback function that gets called by oraclize when the random number is generated
@@ -29,6 +29,6 @@ contract RandomizerTest is usingOraclize {
    ) public {
       // Checks that the sender of this callback was in fact oraclize
       require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
-      emit ShowRandomResult('Merunas message', parseInt(result));
+      emit ShowRandomResult('Merunas message', parseInt(result, 10));
    }
 }
