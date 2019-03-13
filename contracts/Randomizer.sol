@@ -22,7 +22,6 @@ contract Randomizer is usingOraclize {
     }
 
     constructor () public {
-        OAR = OraclizeAddrResolverI(0x413C981AA6281A6140e1e3754840d7F7497AE893);
         oraclize_setProof(proofType_Ledger);
         owner = msg.sender;
     }
@@ -36,13 +35,9 @@ contract Randomizer is usingOraclize {
 
     /// @notice Starts the process of ending a lottery by executing the function that generates random numbers from oraclize
     /// @return queryId The queryId identifier to associate a lottery ID with a query ID
-    function startGeneratingRandom() public payable onlyHydroLottery returns(bytes32 queryId) {
-        // TODO check that the number generated is between 0 and the desired range
-        uint256 numberRandomBytes = 20;
-        uint256 delay = 0;
-        uint256 callbackGas = 2e6; // 2 million gas for the callback function so that it has more than enough gas
-
-        queryId = oraclize_newRandomDSQuery(delay, numberRandomBytes, callbackGas);
+    function startGeneratingRandom() public payable onlyHydroLottery {
+        require(msg.value >= 0.01 ether, 'You must send at least 0.01 for processing the ending functionality');
+        oraclize_query("WolframAlpha", "random number between 1 and 1^10");
     }
 
    /// @notice Callback function that gets called by oraclize when the random number is generated
@@ -53,13 +48,8 @@ contract Randomizer is usingOraclize {
       bytes32 _queryId,
       string memory _result,
       bytes memory _proof
-   ) public oraclize_randomDS_proofVerify(_queryId, _result, _proof) {
-
-      // Checks that the sender of this callback was in fact oraclize
+   ) public {
       require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
-
-      // Generates a number between 0 and 1 billion - 1
-      uint256 generatedRandomNumber = (uint256(keccak256(bytes(_result))) % 1e10);
-      hydroLottery.endLottery(_queryId, generatedRandomNumber);
+      hydroLottery.endLottery(_queryId, parseInt(_result));
    }
 }

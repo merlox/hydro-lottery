@@ -1,54 +1,19 @@
 pragma solidity ^0.5.4;
 
-contract HydroEscrow {
-    uint256 public endTimestamp;
-    address public hydroLotteryAddress;
-    uint256 public hydroReward;
-    uint256 public fee;
-    address payable public feeReceiver;
-    HydroTokenTestnetInterface public hydroToken;
+import './HydroEscrow.sol';
+import './HydroTokenTestnetInterface.sol';
+import './IdentityRegistryInterface.sol';
+import './RandomizerInterface.sol';
 
-    modifier onlyHydroLottery() {
-        require(msg.sender == hydroLotteryAddress, 'This function can only be executed by the original HydroLottery');
-        _;
-    }
+// Rinkeby testnet addresses
+// HydroToken: 0x2df33c334146d3f2d9e09383605af8e3e379e180
+// IdentityRegistry: 0xa7ba71305bE9b2DFEad947dc0E5730BA2ABd28EA
+// Most recent HydroLottery deployed address: 0x001328288dd358644e289f48ec4ef0bc3139a2d2
 
-    // To set all the initial variables
-    constructor(uint256 _endTimestamp, address _hydroToken, uint256 _hydroReward, uint256 _fee, address payable _feeReceiver) public {
-        require(_endTimestamp > now, 'The lottery must end after now');
-        require(_hydroToken != address(0), 'You must set the token address');
-        require(_hydroReward > 0, 'The reward must be larger than zero HYDRO tokens');
-        require(_fee >= 0 && _fee <= 100, 'The fee must be between 0 and 100 (in percentage without the % symbol)');
-        require(_feeReceiver != address(0), 'You must set a fee receiver');
-        endTimestamp = _endTimestamp;
-        hydroLotteryAddress = msg.sender;
-        hydroToken = HydroTokenTestnetInterface(_hydroToken);
-        hydroReward = _hydroReward;
-        fee = _fee;
-        feeReceiver = _feeReceiver;
-    }
+// TODO check that the randomly generated number is within the valid range
 
-    // To send the reward to the winner and distribute the corresponding fee to the fee receiver
-    function releaseWinnerReward(address _winner) public onlyHydroLottery {
-        require(now >= endTimestamp, 'You can only release funds after the lottery has ended');
-        uint256 hydroInsideThisContract = hydroToken.balanceOf(address(this));
-        uint256 hydroForFeeReceiver;
-        uint256 hydroForWinner;
-
-        // If there is no fee, the winner gets all including the ticket prices accomulated + the standard reward, if there's a fee, the winner gets his reward + the ticket prices accomulated - the fee percentage
-        if(fee == 0) {
-            hydroForFeeReceiver = 0;
-            hydroForWinner = hydroInsideThisContract;
-        } else {
-            hydroForFeeReceiver = hydroInsideThisContract * (fee / 100);
-            hydroForWinner = hydroInsideThisContract - hydroForFeeReceiver;
-        }
-
-        hydroToken.transfer(_winner, hydroForWinner);
-        hydroToken.transfer(feeReceiver, hydroForFeeReceiver);
-    }
-}
-
+/// @notice The Hydro Lottery smart contract to create decentralized lotteries for accounts that have an EIN Snowflake ID assciated with them. All payments are done in HYDRO instead of Ether.
+/// @author Merunas Grincalaitis <merunasgrincalaitis@gmail.com>
 contract HydroLottery {
     event LotteryStarted(uint256 indexed id, uint256 beginningDate, uint256 endDate);
     event LotteryEnded(uint256 indexed id, uint256 endTimestamp, uint256 einWinner);
@@ -201,12 +166,22 @@ contract HydroLottery {
     function endLottery(bytes32 _queryId, uint256 _randomNumber) public {
         require(msg.sender == address(randomizer), 'The lottery can only be ended by the randomizer for selecting a random winner');
 
-        uint256 maxRandomValue = 1e10 - 1;
+        // Our range is 0 to 1^10. A random number will be generated between those ranges. So if we have 400 participants the smaller range will be 0 to 400. Simply map those values.
+        /*
+        1^10 -> 100%
+        randomNumber -> x
+        x% = 100 * randomNumber / 1^10
+        then we take that % and we multiply it by the number of paritipants
+        winner = x% / 100 * numberOfParticipants
+        or
+        winner = 100 * randomNumber / 1^10 / 100 * numberOfParticipants
+        */
+
         uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
         uint256 numberOfParticipants = lotteryById[lotteryId].einsParticipating.length;
 
         // Map the ranges from the maximum random number to the number of participants
-        uint256 indexWinner = mapRanges(_randomNumber, 0, maxRandomValue, 0, numberOfParticipants);
+        uint256 indexWinner = 100 * _randomNumber / 1e10 / 100 * numberOfParticipants;
 
         // Just to make sure that we're generating the right values
         require(indexWinner <= numberOfParticipants, 'The generated number must be equal or less the number of participants');
@@ -215,14 +190,6 @@ contract HydroLottery {
         uint256 einWinner = lotteryById[lotteryId].einsParticipating[indexWinner];
         lotteryById[lotteryId].einWinner = einWinner;
         emit LotteryEnded(lotteryId, now, einWinner);
-    }
-
-    /// @notice Maps a range to another and returns the scaled value
-    function mapRanges(uint256 value, uint256 fromMin, uint256 fromMax, uint256 toMin, uint256 toMax) public view returns(uint256) {
-        uint256 fromSpan = fromMax - fromMin;
-        uint256 toSpan = toMax - toMin;
-        uint256 valueScaled = (value - fromMin) / fromSpan;
-        return toMin + (valueScaled * toSpan);
     }
 
     /// @notice Returns all the lottery ids
@@ -245,78 +212,4 @@ contract HydroLottery {
     function getEinsParticipatingInLottery(uint256 lotteryId) public view returns(uint256[] memory) {
         return lotteryById[lotteryId].einsParticipating;
     }
-}
-
-contract HydroTokenTestnetInterface {
-    function transfer(address _to, uint256 _amount) public returns (bool success);
-    function transferFrom(address _from, address _to, uint256 _amount) public returns (bool success);
-    function doTransfer(address _from, address _to, uint _amount) internal;
-    function balanceOf(address _owner) public view returns (uint256 balance);
-    function approve(address _spender, uint256 _amount) public returns (bool success);
-    function approveAndCall(address _spender, uint256 _value, bytes memory _extraData) public returns (bool success);
-    function burn(uint256 _value) public;
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining);
-    function totalSupply() public view returns (uint);
-    function setRaindropAddress(address _raindrop) public;
-    function authenticate(uint _value, uint _challenge, uint _partnerId) public;
-    function setBalances(address[] memory _addressList, uint[] memory _amounts) public;
-    function getMoreTokens() public;
-}
-
-interface IdentityRegistryInterface {
-    function isSigned(address _address, bytes32 messageHash, uint8 v, bytes32 r, bytes32 s)
-        external pure returns (bool);
-
-    // Identity View Functions /////////////////////////////////////////////////////////////////////////////////////////
-    function identityExists(uint ein) external view returns (bool);
-    function hasIdentity(address _address) external view returns (bool);
-    function getEIN(address _address) external view returns (uint ein);
-    function isAssociatedAddressFor(uint ein, address _address) external view returns (bool);
-    function isProviderFor(uint ein, address provider) external view returns (bool);
-    function isResolverFor(uint ein, address resolver) external view returns (bool);
-    function getIdentity(uint ein) external view returns (
-        address recoveryAddress,
-        address[] memory associatedAddresses, address[] memory providers, address[] memory resolvers
-    );
-
-    // Identity Management Functions ///////////////////////////////////////////////////////////////////////////////////
-    function createIdentity(address recoveryAddress, address[] calldata providers, address[] calldata resolvers)
-        external returns (uint ein);
-    function createIdentityDelegated(
-        address recoveryAddress, address associatedAddress, address[] calldata providers, address[] calldata resolvers,
-        uint8 v, bytes32 r, bytes32 s, uint timestamp
-    ) external returns (uint ein);
-    function addAssociatedAddress(
-        address approvingAddress, address addressToAdd, uint8 v, bytes32 r, bytes32 s, uint timestamp
-    ) external;
-    function addAssociatedAddressDelegated(
-        address approvingAddress, address addressToAdd,
-        uint8[2] calldata v, bytes32[2] calldata r, bytes32[2] calldata s, uint[2] calldata timestamp
-    ) external;
-    function removeAssociatedAddress() external;
-    function removeAssociatedAddressDelegated(address addressToRemove, uint8 v, bytes32 r, bytes32 s, uint timestamp)
-        external;
-    function addProviders(address[] calldata providers) external;
-    function addProvidersFor(uint ein, address[] calldata providers) external;
-    function removeProviders(address[] calldata providers) external;
-    function removeProvidersFor(uint ein, address[] calldata providers) external;
-    function addResolvers(address[] calldata resolvers) external;
-    function addResolversFor(uint ein, address[] calldata resolvers) external;
-    function removeResolvers(address[] calldata resolvers) external;
-    function removeResolversFor(uint ein, address[] calldata resolvers) external;
-
-    // Recovery Management Functions ///////////////////////////////////////////////////////////////////////////////////
-    function triggerRecoveryAddressChange(address newRecoveryAddress) external;
-    function triggerRecoveryAddressChangeFor(uint ein, address newRecoveryAddress) external;
-    function triggerRecovery(uint ein, address newAssociatedAddress, uint8 v, bytes32 r, bytes32 s, uint timestamp)
-        external;
-    function triggerDestruction(
-        uint ein, address[] calldata firstChunk, address[] calldata lastChunk, bool resetResolvers
-    ) external;
-}
-
-interface RandomizerInterface {
-    function setHydroLottery(address _hydroLottery) external;
-    function startGeneratingRandom() external payable returns(bytes32 queryId);
-    function __callback(bytes32 _queryId, string calldata  _result, bytes calldata _proof) external;
 }

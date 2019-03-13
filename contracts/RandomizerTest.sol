@@ -5,7 +5,7 @@ import './usingOraclize.sol';
 // Create a contract that inherits oraclize and has the address of the hydro lottery
 // A function that returns the query id and generates a random id which calls the hydro lottery
 contract RandomizerTest is usingOraclize {
-    event ShowRandomResult(string message, string result);
+    event ShowRandomResult(string message, uint256 result);
     event Called(string message);
 
     constructor () public {
@@ -29,6 +29,6 @@ contract RandomizerTest is usingOraclize {
    ) public {
       // Checks that the sender of this callback was in fact oraclize
       require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
-      emit ShowRandomResult('Merunas message', result);
+      emit ShowRandomResult('Merunas message', parseInt(result));
    }
 }
