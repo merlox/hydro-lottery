@@ -3,8 +3,8 @@ const fs = require('fs')
 const Web3 = require('web3')
 const { join } = require('path')
 const RandomizerTest = artifacts.require('RandomizerTest')
-const infura = 'wss://ropsten.infura.io/ws/v3/f7b2c280f3f440728c2b5458b41c663d'
-// const infura = 'http://localhost:8545'
+// const infura = 'wss://ropsten.infura.io/ws/v3/f7b2c280f3f440728c2b5458b41c663d'
+const infura = 'http://localhost:8545'
 const abi = JSON.parse(fs.readFileSync(join(__dirname, '../build', 'contracts', 'RandomizerTest.json'))).abi
 let randomizerTest = {}
 
@@ -30,7 +30,7 @@ contract('RandomizerTest', accounts => {
     // Skip it to stop running this test
     it('Should run oraclize', async () => {
         console.log('Starting random generation...')
-        await randomizerTest.startGeneratingRandom({
+        await randomizerTest.startGeneratingRandom(20, {
             from: accounts[0],
             gas: 8e6,
             value: '100000000000000000' // 0.1 ETH in wei

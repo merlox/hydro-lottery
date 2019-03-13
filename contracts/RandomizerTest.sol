@@ -9,14 +9,14 @@ contract RandomizerTest is usingOraclize {
     event Called(string message);
 
     constructor () public {
-        /* OAR = OraclizeAddrResolverI(0x0F7868921060Bf4c01D4f9d1179A4e16A01B3dAC); */
+        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
         oraclize_setProof(proofType_Ledger);
     }
 
     /// @notice Starts the process of ending a lottery by executing the function that generates random numbers from oraclize
-    function startGeneratingRandom() public payable {
+    function startGeneratingRandom(uint256 _maxNumber) public payable {
         emit Called('The function has been called');
-        oraclize_query("WolframAlpha", "random number between 0 and 1^10");
+        oraclize_query("WolframAlpha", strConcat("random number between 0 and ", uint2str(_maxNumber)));
     }
 
    /// @notice Callback function that gets called by oraclize when the random number is generated
