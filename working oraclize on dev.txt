@@ -1,0 +1,8 @@
+ganache-cli -m 'capable idle all stumble typical organ jaguar man trap hospital ten talent' -l 8000000 -a 10 -u 0,1,2,3,4,5,6,7,8,9
+
+cd ethereum-bridge/
+node bridge -a 9 --dev
+
+truffle test test/randomizerTest.js
+
+Remember to update the `infura` variable inside your testing file to http://localhost:8545
