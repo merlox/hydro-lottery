@@ -4,6 +4,8 @@ const Web3 = require('web3')
 const { join } = require('path')
 const RandomizerTest = artifacts.require('RandomizerTest')
 const infura = 'wss://ropsten.infura.io/ws/v3/f7b2c280f3f440728c2b5458b41c663d'
+// const infura = 'http://localhost:8545'
+const abi = JSON.parse(fs.readFileSync(join(__dirname, '../build', 'contracts', 'RandomizerTest.json'))).abi
 let randomizerTest = {}
 
 // Do test random key generation with my own oracle instead of oraclize since oraclize is expensive. When the tests are completed, deploy it to ropsten or rinkeby and use the real oraclize although it may only work on mainnet, test that.
@@ -12,16 +14,16 @@ contract('RandomizerTest', accounts => {
     beforeEach(async () => {
         web3 = new Web3(new Web3.providers.WebsocketProvider(infura))
         randomizerTest = await RandomizerTest.new()
+        randomizerTestEvents = new web3.eth.Contract(abi, randomizerTest.address)
         console.log('Deployed Randomizer', randomizerTest.address)
         console.log('Listening to events...')
-        const event = randomizerTest.ShowRandomResult()
-        event.on('data', newEvent => {
-            console.log('New event', newEvent)
+        const showResult = randomizerTestEvents.events.ShowRandomResult()
+        showResult.on('data', newEvent => {
+            console.log('New event', newEvent.returnValues)
         })
-
-        const subscription = randomizerTest.Called()
+        const subscription = randomizerTestEvents.events.Called()
         subscription.on('data', newEvent => {
-            console.log('New event', newEvent)
+            console.log('New event', newEvent.returnValues)
         })
     })
 
@@ -31,10 +33,10 @@ contract('RandomizerTest', accounts => {
         await randomizerTest.startGeneratingRandom({
             from: accounts[0],
             gas: 8e6,
-            value: '100000000000000000' // 0.1 ETH in wei
+            value: web3.utils.toWei(0.1) // 0.5 ETH in wei
         })
         console.log('Waiting 1000 seconds for the event from __callback()...')
-        await asyncSetTimeout(10e3)
+        await asyncSetTimeout(1000e3)
     })
 })
 
