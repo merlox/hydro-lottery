@@ -22,6 +22,7 @@ contract Randomizer is usingOraclize {
     }
 
     constructor () public {
+        OAR = OraclizeAddrResolverI(0x413C981AA6281A6140e1e3754840d7F7497AE893);
         oraclize_setProof(proofType_Ledger);
         owner = msg.sender;
     }

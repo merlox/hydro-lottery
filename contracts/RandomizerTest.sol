@@ -11,7 +11,7 @@ contract RandomizerTest is usingOraclize {
     address public owner;
 
     constructor () public {
-        // TODO uncomment this since we can't have it when testing with ganache
+        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
         oraclize_setProof(proofType_Ledger);
     }
 

@@ -44,7 +44,7 @@ contract('HydroLottery', accounts => {
         await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1], gas: 8e6 })
     })
 
-    it('Should create a new lottery', async () => {
+    it.only('Should create a new lottery', async () => {
         const id = 0
         const name = fillBytes32WithSpaces('Example')
         const description = 'This is an example'
