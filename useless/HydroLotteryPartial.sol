@@ -183,7 +183,7 @@ contract HydroLottery {
     }
 
     /// @notice Maps a range to another and returns the scaled value
-    function mapRanges(uint256 value, uint256 fromMin, uint256 fromMax, uint256 toMin, uint256 toMax) public view returns(uint256) {
+    function mapRanges(uint256 value, uint256 fromMin, uint256 fromMax, uint256 toMin, uint256 toMax) public pure returns(uint256) {
         uint256 fromSpan = fromMax - fromMin;
         uint256 toSpan = toMax - toMin;
         uint256 valueScaled = (value - fromMin) / fromSpan;
