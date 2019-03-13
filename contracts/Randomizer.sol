@@ -9,6 +9,7 @@ import './usingOraclize.sol';
 // A function that returns the query id and generates a random id which calls the hydro lottery
 contract Randomizer is usingOraclize {
     event GeneratedRandom(bytes32 _queryId, uint256 _numberOfParticipants, uint256 _generatedRandomNumber);
+    event QueryRandom(string message);
 
     HydroLotteryInterface public hydroLottery;
     address public owner;
@@ -41,7 +42,9 @@ contract Randomizer is usingOraclize {
     /// @return queryId The queryId identifier to associate a lottery ID with a query ID
     function startGeneratingRandom(uint256 _maxNumber) public payable onlyHydroLottery returns(bytes32) {
         require(msg.value >= 0.01 ether, 'You must send at least 0.01 for processing the ending functionality');
-        bytes32 queryId = oraclize_query("WolframAlpha", strConcat("random number between 0 and ", uint2str(_maxNumber)));
+        string memory query = strConcat("random number between 0 and ", uint2str(_maxNumber));
+        bytes32 queryId = oraclize_query("WolframAlpha", query);
+        emit QueryRandom(query);
         numberOfParticipants[queryId] = _maxNumber;
         return queryId;
     }
