@@ -8,10 +8,11 @@ import './usingOraclize.sol';
 // A function that returns the query id and generates a random id which calls the hydro lottery
 contract RandomizerTest is usingOraclize {
     event ShowRandomResult(string message, string result, string message2, uint256 generatedNumber, string message3, uint256 generatedCutNumber);
+    event Called(string message);
     address public owner;
 
     constructor () public {
-        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+        OAR = OraclizeAddrResolverI(0x0F7868921060Bf4c01D4f9d1179A4e16A01B3dAC);
         oraclize_setProof(proofType_Ledger);
     }
 
@@ -23,7 +24,10 @@ contract RandomizerTest is usingOraclize {
         uint256 delay = 0;
         uint256 callbackGas = 2e6; // 2 million gas for the callback function so that it has more than enough gas
 
-        queryId = oraclize_newRandomDSQuery(delay, numberRandomBytes, callbackGas);
+        emit Called('The function has been called');
+
+        queryId =  oraclize_query("URL",
+            "json(https://api.random.org/json-rpc/1/invoke).result.random.data.0", '\n{"jsonrpc":"2.0","method":"generateIntegers","params":{"apiKey":"9844ab4d-52ef-4587-9cf3-20a6930a7f6e","n":1,"min":1,"max":10,"replacement":true,"base":10},"id":1}');
     }
 
    /// @notice Callback function that gets called by oraclize when the random number is generated
