@@ -30,7 +30,27 @@ contract('RandomizerTest', accounts => {
     // Skip it to stop running this test
     it('Should run oraclize', async () => {
         console.log('Starting random generation...')
-        await randomizerTest.startGeneratingRandom(20, {
+        await randomizerTest.startGeneratingRandom(10, {
+            from: accounts[0],
+            gas: 8e6,
+            value: '100000000000000000' // 0.1 ETH in wei
+        })
+        await randomizerTest.startGeneratingRandom(482, {
+            from: accounts[0],
+            gas: 8e6,
+            value: '100000000000000000' // 0.1 ETH in wei
+        })
+        await randomizerTest.startGeneratingRandom(3921, {
+            from: accounts[0],
+            gas: 8e6,
+            value: '100000000000000000' // 0.1 ETH in wei
+        })
+        await randomizerTest.startGeneratingRandom(59382, {
+            from: accounts[0],
+            gas: 8e6,
+            value: '100000000000000000' // 0.1 ETH in wei
+        })
+        await randomizerTest.startGeneratingRandom(910381, {
             from: accounts[0],
             gas: 8e6,
             value: '100000000000000000' // 0.1 ETH in wei

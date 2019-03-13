@@ -44,7 +44,7 @@ contract('HydroLottery', accounts => {
         await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1], gas: 8e6 })
     })
 
-    it.only('Should create a new lottery', async () => {
+    it('Should create a new lottery', async () => {
         const id = 0
         const name = fillBytes32WithSpaces('Example')
         const description = 'This is an example'
@@ -169,7 +169,7 @@ contract('HydroLottery', accounts => {
         assert.equal(totalTickets, 2, 'There must be two tickets purchased')
     })
 
-    it('Should end a lottery after the time runs out with the raffle() function', async () => {
+    it.only('Should end a lottery after the time runs out with the raffle() function', async () => {
         const lotteryId = 0
         const hydroPrice = 100
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
@@ -177,7 +177,7 @@ contract('HydroLottery', accounts => {
         const description = 'This is an example'
         const hydroReward = 1000
         const startTime = Math.floor(new Date().getTime() / 1000)
-        const endTime = Math.floor(new Date().getTime() / 1000) + 500 // 500 seconds after now
+        const endTime = Math.floor(new Date().getTime() / 1000) + 50 // 50 seconds after now
         const fee = 10
         const feeReceiver = accounts[0]
         let counterTime = Math.floor(new Date().getTime() / 1000)
@@ -295,7 +295,7 @@ contract('HydroLottery', accounts => {
 function waitFiveConfirmations(transaction) {
     return new Promise((resolve, reject) => {
         transaction.on('confirmation', confirmationNumber => {
-            if(confirmationNumber >= 5) resolve()
+            if(confirmationNumber >= 2) resolve()
         })
     })
 }

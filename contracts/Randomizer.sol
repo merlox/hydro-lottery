@@ -8,8 +8,11 @@ import './usingOraclize.sol';
 // Create a contract that inherits oraclize and has the address of the hydro lottery
 // A function that returns the query id and generates a random id which calls the hydro lottery
 contract Randomizer is usingOraclize {
+    event GeneratedRandom(bytes32 _queryId, uint256 _numberOfParticipants, uint256 _generatedRandomNumber);
+
     HydroLotteryInterface public hydroLottery;
     address public owner;
+    mapping(bytes32 => uint256) public numberOfParticipants;
 
     modifier onlyOwner {
         require(msg.sender == owner, 'This function can only be executed by the owner of the contract');
@@ -22,6 +25,7 @@ contract Randomizer is usingOraclize {
     }
 
     constructor () public {
+        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
         oraclize_setProof(proofType_Ledger);
         owner = msg.sender;
     }
@@ -35,9 +39,11 @@ contract Randomizer is usingOraclize {
 
     /// @notice Starts the process of ending a lottery by executing the function that generates random numbers from oraclize
     /// @return queryId The queryId identifier to associate a lottery ID with a query ID
-    function startGeneratingRandom(uint256 _maxNumber) public payable onlyHydroLottery {
+    function startGeneratingRandom(uint256 _maxNumber) public payable onlyHydroLottery returns(bytes32) {
         require(msg.value >= 0.01 ether, 'You must send at least 0.01 for processing the ending functionality');
-        oraclize_query("WolframAlpha", strConcat("random number between 0 and ", uint2str(_maxNumber)));
+        bytes32 queryId = oraclize_query("WolframAlpha", strConcat("random number between 0 and ", uint2str(_maxNumber)));
+        numberOfParticipants[queryId] = _maxNumber;
+        return queryId;
     }
 
    /// @notice Callback function that gets called by oraclize when the random number is generated
@@ -50,6 +56,7 @@ contract Randomizer is usingOraclize {
       bytes memory _proof
    ) public {
       require(msg.sender == oraclize_cbAddress(), 'The callback function can only be executed by oraclize');
-      hydroLottery.endLottery(_queryId, parseInt(_result, 10));
+      emit GeneratedRandom(_queryId, numberOfParticipants[_queryId], parseInt(_result));
+      hydroLottery.endLottery(_queryId, parseInt(_result));
    }
 }

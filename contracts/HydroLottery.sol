@@ -152,7 +152,7 @@ contract HydroLottery {
         uint256 senderEIN = identityRegistry.getEIN(msg.sender);
 
         require(lottery.einWinner == 0, 'The raffle for this lottery has been completed already');
-        require(now > lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
+        require(now >= lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
         require(senderEIN == lottery.einOwner, 'The raffle must be executed by the owner of the lottery');
         require(msg.value >= 0.01 ether, 'You must send at least 0.01 ether to execute the termination function');
 

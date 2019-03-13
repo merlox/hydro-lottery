@@ -6,3 +6,5 @@ node bridge -a 9 --dev
 truffle test test/randomizerTest.js
 
 Remember to update the `infura` variable inside your testing file to http://localhost:8545
+
+// TODO hacer un mapping con el numero de digitos asociado a un queryID para que te genere un numero sin zeros
