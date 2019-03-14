@@ -118,9 +118,7 @@ contract HydroLottery {
         lotteries.push(newLottery);
         lotteryById[newLotteryId] = newLottery;
         lotteryIds.push(newLotteryId);
-
         emit LotteryStarted(newLotteryId, _beginningTimestamp, _endTimestamp);
-
         return newLotteryId;
     }
 
@@ -154,9 +152,9 @@ contract HydroLottery {
         uint256 senderEIN = identityRegistry.getEIN(msg.sender);
 
         require(!lottery.isFinished, 'The raffle for this lottery has been completed already');
-        require(now >= lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
         require(senderEIN == lottery.einOwner, 'The raffle must be executed by the owner of the lottery');
         require(msg.value >= 0.01 ether, 'You must send at least 0.01 ether to execute the termination function');
+        require(now > lottery.endDate, 'You must wait until the lottery end date is reached before selecting the winner');
 
         uint256 numberOfParticipants = lottery.einsParticipating.length;
         bytes32 queryId = randomizer.startGeneratingRandom.value(msg.value)(numberOfParticipants); // The randomizer generates a number between 0 and the number of participants
@@ -170,13 +168,9 @@ contract HydroLottery {
     function endLottery(bytes32 _queryId, uint256 _randomNumber) public {
         require(msg.sender == address(randomizer), 'The lottery can only be ended by the randomizer for selecting a random winner');
         uint256 lotteryId = endingLotteryIdByQueryId[_queryId];
-        Lottery memory lottery = lotteryById[lotteryId];
-
-        // Just to make sure that we're generating the right values
-        require(_randomNumber <= lottery.einsParticipating.length, 'The generated number must be equal or less the number of participants');
-
+        
         // Select the winner based on his position in the array of participants
-        uint256 einWinner = lottery.einsParticipating[_randomNumber];
+        uint256 einWinner = lotteryById[lotteryId].einsParticipating[_randomNumber];
         lotteryById[lotteryId].einWinner = einWinner;
         lotteryById[lotteryId].isFinished = true;
         emit LotteryEnded(lotteryId, now, einWinner);

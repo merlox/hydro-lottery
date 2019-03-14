@@ -2,6 +2,7 @@ const assert = require('assert')
 const fs = require('fs')
 const { join } = require('path')
 const Web3 = require('web3')
+// const infura = 'wss://ropsten.infura.io/ws/v3/f7b2c280f3f440728c2b5458b41c663d'
 const infura = 'http://localhost:8545'
 const abi = JSON.parse(fs.readFileSync(join(__dirname, '../build', 'contracts', 'Randomizer.json'))).abi
 const IdentityRegistry = artifacts.require('IdentityRegistry')
@@ -13,6 +14,7 @@ let hydroToken = {}
 let identityRegistry = {}
 let hydroLottery = {}
 let randomizer = {}
+let randomizerEvents = {}
 
 // 1. Write tests to deploy the token contract with truffle on ganache
 // 2. Deploy the identity registry
@@ -22,7 +24,7 @@ let randomizer = {}
 // Do test random key generation with my own oracle instead of oraclize since oraclize is expensive. When the tests are completed, deploy it to ropsten or rinkeby and use the real oraclize although it may only work on mainnet, test that.
 contract('HydroLottery', accounts => {
     // Deploy a new HydroLottery, Token and Registry before each test to avoid messing shit up while creatin an EIN and getting tokens
-    before(async () => {
+    beforeEach(async () => {
         web3 = new Web3(new Web3.providers.WebsocketProvider(infura))
         console.log('Deploying new hydro token...')
         hydroToken = await HydroTokenTestnet.new({gas: 8e6})
@@ -39,9 +41,9 @@ contract('HydroLottery', accounts => {
 
         // Listen to events on the randomizer contract
         randomizerEvents = new web3.eth.Contract(abi, randomizer.address)
-        const subscription = randomizerEvents.events.QueryRandom()
-        subscription.on('data', newEvent => {
-            console.log('Oraclize will run:', newEvent.returnValues.message)
+        console.log('Randomizer events address', randomizer.address)
+        randomizerEvents.events.SetHydroLotteryAddress().on('data', newEvent => {
+            console.log('The Hydro Lottery has been setup')
         })
 
         console.log('Setting lottery on randomizer')
@@ -49,10 +51,10 @@ contract('HydroLottery', accounts => {
         await randomizer.setHydroLottery(hydroLottery.address, {gas: 8e6})
         console.log('Creating identity one')
         // EIN 1
-        await identityRegistry.createIdentity(accounts[0], accounts, accounts, {gas: 8e6})
+        await identityRegistry.createIdentity(accounts[0], [accounts[1]], [accounts[1]], {gas: 8e6})
         console.log('Creating identity two')
         // EIN 2
-        await identityRegistry.createIdentity(accounts[1], accounts, accounts, { from: accounts[1], gas: 8e6 })
+        await identityRegistry.createIdentity(accounts[1], [accounts[2]], [accounts[2]], { from: accounts[1], gas: 8e6 })
     })
 
     it('Should create a new lottery', async () => {
@@ -180,7 +182,7 @@ contract('HydroLottery', accounts => {
         assert.equal(totalTickets, 2, 'There must be two tickets purchased')
     })
 
-    it.only('Should end a lottery after the time runs out with the raffle() function', async () => {
+    it('Should end a lottery after the time runs out with the raffle() function', async () => {
         const lotteryId = 0
         const hydroPrice = 100
         const ein = parseInt(await identityRegistry.getEIN(accounts[0]))
@@ -188,20 +190,27 @@ contract('HydroLottery', accounts => {
         const description = 'This is an example'
         const hydroReward = 1000
         const startTime = Math.floor(new Date().getTime() / 1000)
-        const endTime = Math.floor(new Date().getTime() / 1000) + 50 // 50 seconds after now
+        const endTime = Math.floor(new Date().getTime() / 1000) + 50 // 500 seconds after now
         const fee = 10
         const feeReceiver = accounts[0]
         let counterTime = Math.floor(new Date().getTime() / 1000)
         let approval
         let transaction
 
+        randomizerEvents.events.QueryRandom().on('data', newEvent => {
+            console.log('Oraclize will run:', newEvent.returnValues.message)
+        })
+        randomizerEvents.events.GeneratedRandom().on('data', newEvent => {
+            console.log('Generated random', newEvent.returnValues)
+        })
+
         console.log('Setting up ein 3...')
         // EIN 3
-        transaction = identityRegistry.createIdentity(accounts[2], accounts, accounts, { from: accounts[2], gas: 8e6 })
+        transaction = identityRegistry.createIdentity(accounts[2], [accounts[3]], [accounts[3]], { from: accounts[2], gas: 8e6 })
         await waitFiveConfirmations(transaction)
         console.log('Setting up ein 4...')
         // EIN 4
-        transaction = identityRegistry.createIdentity(accounts[3], accounts, accounts, { from: accounts[3], gas: 8e6 })
+        transaction = identityRegistry.createIdentity(accounts[3], [accounts[4]], [accounts[4]], { from: accounts[3], gas: 8e6 })
         await waitFiveConfirmations(transaction)
 
         console.log('Creating lottery\'s approval...')
@@ -279,34 +288,40 @@ contract('HydroLottery', accounts => {
 
         // If the contract time has not been reached yet, wait a bit
         while(counterTime < endTime) {
-            console.log('Counter', counterTime)
-            console.log('End time', endTime)
-            counterTime = Math.floor(new Date().getTime() / 1000)
+            console.log('Counter', counterTime, 'End time', endTime)
+            counterTime = Math.floor(new Date().getTime() / 1000) + 5
             await asyncSetTimeout(5e3)
         }
 
         console.log('Running raffle after time is up...')
-        // To run the raffle we need to create the lottery, add 3 participants, run the time to the future and run the raffle()
         transaction = hydroLottery.raffle(lotteryId, {
-            from: accounts[0],
             gas: 8e6,
-            value: '100000000000000000' // 0.1 ETH in wei
+            value: "100000000000000000"
         })
         await waitFiveConfirmations(transaction)
-        console.log('Waiting 200 seconds for oraclize to catch up')
-        await asyncSetTimeout(1e3 * 200) // Wait 200 seconds for oraclize to generate the random number since it takes some time to receive the query, process the query and confirm the transaction with the result on the blockchain
+
+        console.log('Waiting 100 seconds for oraclize to catch up')
+        await asyncSetTimeout(1e3 * 100) // Wait 100 seconds for oraclize to generate the random number since it takes some time to receive the query, process the query and confirm the transaction with the result on the blockchain
 
         const lottery = await hydroLottery.lotteryById(lotteryId)
         console.log('Ein winner', parseInt(lottery.einWinner))
-        assert.ok(parseInt(lottery.einWinner) != 0, 'The lottery winner must be set')
+        console.log('Lottery is finished', lottery.isFinished)
+        assert.ok(lottery.isFinished, 'The lottery must be finished')
     })
 })
 
 function waitFiveConfirmations(transaction) {
     return new Promise((resolve, reject) => {
-        transaction.on('confirmation', confirmationNumber => {
-            if(confirmationNumber >= 2) resolve()
-        })
+        try {
+            transaction.on('confirmation', confirmationNumber => {
+                if(confirmationNumber >= 2) resolve()
+            })
+            transaction.on('error', e => {
+                reject(e)
+            })
+        } catch(e) {
+            reject(e)
+        }
     })
 }
 

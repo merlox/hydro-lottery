@@ -10,6 +10,7 @@ import './usingOraclize.sol';
 contract Randomizer is usingOraclize {
     event GeneratedRandom(bytes32 _queryId, uint256 _numberOfParticipants, uint256 _generatedRandomNumber);
     event QueryRandom(string message);
+    event SetHydroLotteryAddress(address _hydroLottery);
 
     HydroLotteryInterface public hydroLottery;
     address public owner;
@@ -36,6 +37,7 @@ contract Randomizer is usingOraclize {
     function setHydroLottery(address _hydroLottery) public onlyOwner {
         require(_hydroLottery != address(0), 'The hydro lottery address can only be set by the owner of this contract');
         hydroLottery = HydroLotteryInterface(_hydroLottery);
+        emit SetHydroLotteryAddress(_hydroLottery);
     }
 
     /// @notice Starts the process of ending a lottery by executing the function that generates random numbers from oraclize
